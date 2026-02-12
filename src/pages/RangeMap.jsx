@@ -1,0 +1,487 @@
+import { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import {
+  Map as MapIcon, Plane, MapPin, Download,
+  Loader2, Target, Ruler, Info, Layers
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+import { createCircleGeoJSON, nmToKm, calculateZoomForRadius } from '@/lib/utils/mapUtils';
+
+const MAJOR_AIRPORTS = [
+  { code: 'DEL', name: 'New Delhi (DEL)', lat: 28.5665, lng: 77.1031 },
+  { code: 'BOM', name: 'Mumbai (BOM)', lat: 19.0896, lng: 72.8656 },
+  { code: 'BLR', name: 'Bangalore (BLR)', lat: 13.1986, lng: 77.7066 },
+  { code: 'MAA', name: 'Chennai (MAA)', lat: 12.9941, lng: 80.1709 },
+  { code: 'HYD', name: 'Hyderabad (HYD)', lat: 17.2403, lng: 78.4294 },
+  { code: 'CCU', name: 'Kolkata (CCU)', lat: 22.6520, lng: 88.4463 },
+  { code: 'DXB', name: 'Dubai (DXB)', lat: 25.2532, lng: 55.3657 },
+  { code: 'SIN', name: 'Singapore (SIN)', lat: 1.3644, lng: 103.9915 },
+  { code: 'LHR', name: 'London (LHR)', lat: 51.4700, lng: -0.4543 },
+  { code: 'JFK', name: 'New York (JFK)', lat: 40.6413, lng: -73.7781 },
+];
+
+
+export default function RangeMap() {
+  const [origin, setOrigin] = useState(MAJOR_AIRPORTS[0]);
+  const [selectedAircraftId, setSelectedAircraftId] = useState('');
+  const [rangePercentage, setRangePercentage] = useState(100);
+  const [showRings, setShowRings] = useState([true, true, false]);
+  const [mapStyle, setMapStyle] = useState('standard');
+  const [destination, setDestination] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const markersRef = useRef([]);
+
+  const aircraft = [
+    { id: '1', manufacturer: 'Gulfstream', model: 'G650ER', max_range_nm: 7500, cruise_speed_ktas: 516, thumbnail_url: null },
+    { id: '2', manufacturer: 'Bombardier', model: 'Global 7500', max_range_nm: 7700, cruise_speed_ktas: 516, thumbnail_url: null },
+    { id: '3', manufacturer: 'Dassault', model: 'Falcon 8X', max_range_nm: 6450, cruise_speed_ktas: 460, thumbnail_url: null },
+    { id: '4', manufacturer: 'Cessna', model: 'Citation Longitude', max_range_nm: 3500, cruise_speed_ktas: 476, thumbnail_url: null },
+    { id: '5', manufacturer: 'Embraer', model: 'Praetor 600', max_range_nm: 4018, cruise_speed_ktas: 466, thumbnail_url: null },
+    { id: '6', manufacturer: 'Pilatus', model: 'PC-24', max_range_nm: 2000, cruise_speed_ktas: 440, thumbnail_url: null },
+    { id: '7', manufacturer: 'Boeing', model: 'BBJ 737 MAX', max_range_nm: 6600, cruise_speed_ktas: 470, thumbnail_url: null },
+    { id: '8', manufacturer: 'Airbus', model: 'ACJ320neo', max_range_nm: 6000, cruise_speed_ktas: 460, thumbnail_url: null },
+  ];
+
+  const selectedAircraft = aircraft.find(a => a.id === selectedAircraftId);
+  const maxRange = selectedAircraft?.max_range_nm || 2000;
+  const effectiveRange = maxRange * (rangePercentage / 100);
+
+  // Calculate ring distances (100%, 75%, 50% of range)
+  const rings = [
+    showRings[0] ? effectiveRange : null,
+    showRings[1] ? effectiveRange * 0.75 : null,
+    showRings[2] ? effectiveRange * 0.5 : null
+  ].filter(Boolean);
+
+  const ringColors = ['#3B82F6', '#0EA5E9', '#06B6D4'];
+
+  const mapStyles = {
+    standard: 'mapbox://styles/mapbox/streets-v12',
+    dark: 'mapbox://styles/mapbox/dark-v11',
+    satellite: 'mapbox://styles/mapbox/satellite-streets-v12'
+  };
+
+  // Calculate distance to destination
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 3440.065; // Earth's radius in nautical miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const distanceToDestination = destination 
+    ? calculateDistance(origin.lat, origin.lng, destination.lat, destination.lng)
+    : null;
+
+  const flightTime = distanceToDestination && selectedAircraft?.cruise_speed_ktas
+    ? distanceToDestination / selectedAircraft.cruise_speed_ktas
+    : null;
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    // Simulated export - in production would use html2canvas
+    setTimeout(() => {
+      alert('Map export functionality requires additional setup. In production, this would generate a PNG.');
+      setIsExporting(false);
+    }, 1000);
+  };
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: mapStyles[mapStyle],
+      center: [origin.lng, origin.lat],
+      zoom: 4,
+    });
+
+    mapRef.current = map;
+
+    map.on('load', () => {
+      // Map is ready
+    });
+
+    return () => {
+      map.remove();
+    };
+  }, []);
+
+  // Update map style
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.setStyle(mapStyles[mapStyle]);
+  }, [mapStyle]);
+
+  // Update origin and circles
+  useEffect(() => {
+    if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
+
+    const map = mapRef.current;
+
+    // Remove existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Remove existing circle layers
+    for (let i = 0; i < 3; i++) {
+      if (map.getLayer(`circle-fill-${i}`)) map.removeLayer(`circle-fill-${i}`);
+      if (map.getLayer(`circle-outline-${i}`)) map.removeLayer(`circle-outline-${i}`);
+      if (map.getSource(`circle-${i}`)) map.removeSource(`circle-${i}`);
+    }
+
+    // Add origin marker
+    const originEl = document.createElement('div');
+    originEl.innerHTML = `
+      <div class="w-8 h-8 bg-red-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+    `;
+    const originMarker = new mapboxgl.Marker({ element: originEl })
+      .setLngLat([origin.lng, origin.lat])
+      .addTo(map);
+    markersRef.current.push(originMarker);
+
+    // Add destination marker
+    if (destination) {
+      const destEl = document.createElement('div');
+      destEl.innerHTML = `
+        <div class="w-8 h-8 bg-green-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+          </svg>
+        </div>
+      `;
+      const destMarker = new mapboxgl.Marker({ element: destEl })
+        .setLngLat([destination.lng, destination.lat])
+        .addTo(map);
+      markersRef.current.push(destMarker);
+    }
+
+    // Add range circles
+    rings.forEach((range, index) => {
+      const circleGeoJSON = createCircleGeoJSON(origin.lng, origin.lat, nmToKm(range));
+
+      map.addSource(`circle-${index}`, {
+        type: 'geojson',
+        data: circleGeoJSON,
+      });
+
+      map.addLayer({
+        id: `circle-fill-${index}`,
+        type: 'fill',
+        source: `circle-${index}`,
+        paint: {
+          'fill-color': ringColors[index] || '#3B82F6',
+          'fill-opacity': 0.1 - (index * 0.03),
+        },
+      });
+
+      map.addLayer({
+        id: `circle-outline-${index}`,
+        type: 'line',
+        source: `circle-${index}`,
+        paint: {
+          'line-color': ringColors[index] || '#3B82F6',
+          'line-width': 2,
+          'line-dasharray': index > 0 ? [2, 2] : [1, 0],
+        },
+      });
+    });
+
+    // Fly to origin
+    map.flyTo({
+      center: [origin.lng, origin.lat],
+      zoom: 4,
+      duration: 1000,
+    });
+  }, [origin, destination, rings, ringColors]);
+
+  return (
+    <div className="min-h-screen bg-blue-950 flex flex-col lg:flex-row">
+      {/* Left Control Panel */}
+      <div className="lg:w-96 bg-blue-900 border-r border-blue-800 flex-shrink-0 overflow-y-auto">
+        <div className="p-6 border-b border-blue-800">
+          <div className="flex items-center gap-2 text-sky-400 text-sm mb-2">
+            <MapIcon className="w-4 h-4" />
+            <span>Range Visualization</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white">Range Map</h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Visualize aircraft range from any origin
+          </p>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Origin Selector */}
+          <div>
+            <Label className="text-slate-300 text-sm font-medium mb-2 block flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-sky-400" />
+              Origin Airport
+            </Label>
+            <Select value={origin.code} onValueChange={(code) => setOrigin(MAJOR_AIRPORTS.find(a => a.code === code))}>
+              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MAJOR_AIRPORTS.map(airport => (
+                  <SelectItem key={airport.code} value={airport.code}>
+                    {airport.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Aircraft Selector */}
+          <div>
+            <Label className="text-slate-300 text-sm font-medium mb-2 block flex items-center gap-2">
+              <Plane className="w-4 h-4 text-sky-400" />
+              Aircraft Model
+            </Label>
+            <Select value={selectedAircraftId} onValueChange={setSelectedAircraftId}>
+              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
+                <SelectValue placeholder="Select aircraft" />
+              </SelectTrigger>
+              <SelectContent>
+                {aircraft.map(a => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.manufacturer} {a.model} ({a.max_range_nm?.toLocaleString()} nm)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selected Aircraft Info */}
+          {selectedAircraft && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-blue-800/50 rounded-xl p-4 border border-blue-700"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                {selectedAircraft.thumbnail_url ? (
+                  <img 
+                    src={selectedAircraft.thumbnail_url}
+                    alt={selectedAircraft.model}
+                    className="w-16 h-10 object-cover rounded-lg"
+                  />
+                ) : (
+                  <div className="w-16 h-10 bg-blue-700 rounded-lg flex items-center justify-center">
+                    <Plane className="w-6 h-6 text-blue-300" />
+                  </div>
+                )}
+                <div>
+                  <div className="text-white font-medium">{selectedAircraft.manufacturer}</div>
+                  <div className="text-sky-400 font-bold">{selectedAircraft.model}</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-blue-900/50 rounded-lg p-2">
+                  <div className="text-slate-400 text-xs">Max Range</div>
+                  <div className="text-white font-medium">{selectedAircraft.max_range_nm?.toLocaleString()} nm</div>
+                </div>
+                <div className="bg-blue-900/50 rounded-lg p-2">
+                  <div className="text-slate-400 text-xs">Cruise Speed</div>
+                  <div className="text-white font-medium">{selectedAircraft.cruise_speed_ktas} ktas</div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Range Percentage */}
+          <div>
+            <Label className="text-slate-300 text-sm font-medium mb-2 block flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Ruler className="w-4 h-4 text-sky-400" />
+                Range Factor
+              </span>
+              <span className="text-sky-400">{rangePercentage}%</span>
+            </Label>
+            <Slider
+              value={[rangePercentage]}
+              onValueChange={([value]) => setRangePercentage(value)}
+              min={50}
+              max={100}
+              step={5}
+              className="w-full"
+            />
+            <div className="text-xs text-slate-500 mt-1">
+              Effective range: {effectiveRange.toLocaleString()} nm
+            </div>
+          </div>
+
+          {/* Range Rings Toggle */}
+          <div>
+            <Label className="text-slate-300 text-sm font-medium mb-3 block flex items-center gap-2">
+              <Target className="w-4 h-4 text-sky-400" />
+              Range Rings
+            </Label>
+            <div className="space-y-3">
+              {[
+                { label: '100% Range', color: 'bg-blue-400', index: 0 },
+                { label: '75% Range', color: 'bg-sky-400', index: 1 },
+                { label: '50% Range', color: 'bg-cyan-400', index: 2 }
+              ].map(ring => (
+                <div key={ring.index} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${ring.color}`} />
+                    <span className="text-slate-300 text-sm">{ring.label}</span>
+                  </div>
+                  <Switch
+                    checked={showRings[ring.index]}
+                    onCheckedChange={(checked) => {
+                      const newRings = [...showRings];
+                      newRings[ring.index] = checked;
+                      setShowRings(newRings);
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Map Style */}
+          <div>
+            <Label className="text-slate-300 text-sm font-medium mb-2 block flex items-center gap-2">
+              <Layers className="w-4 h-4 text-sky-400" />
+              Map Style
+            </Label>
+            <Select value={mapStyle} onValueChange={setMapStyle}>
+              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="standard">Standard</SelectItem>
+                <SelectItem value="dark">Dark Mode</SelectItem>
+                <SelectItem value="satellite">Satellite</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Destination */}
+          <div>
+            <Label className="text-slate-300 text-sm font-medium mb-2 block">
+              Destination (optional)
+            </Label>
+            <Select value={destination?.code || ''} onValueChange={(code) => setDestination(MAJOR_AIRPORTS.find(a => a.code === code) || null)}>
+              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
+                <SelectValue placeholder="Select destination" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={null}>Clear destination</SelectItem>
+                {MAJOR_AIRPORTS.filter(a => a.code !== origin.code).map(airport => (
+                  <SelectItem key={airport.code} value={airport.code}>
+                    {airport.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Distance Info */}
+          {distanceToDestination !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-br from-sky-500/20 to-sky-600/10 rounded-xl p-4 border border-sky-500/30"
+              >
+              <div className="flex items-center gap-2 text-sky-400 text-sm font-medium mb-2">
+                <Info className="w-4 h-4" />
+                Route Information
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Distance</span>
+                  <span className="text-white font-medium">{Math.round(distanceToDestination).toLocaleString()} nm</span>
+                </div>
+                {flightTime && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Est. Flight Time</span>
+                    <span className="text-white font-medium">
+                      {Math.floor(flightTime)}h {Math.round((flightTime % 1) * 60)}m
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Within Range</span>
+                  <span className={`font-medium ${distanceToDestination <= effectiveRange ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {distanceToDestination <= effectiveRange ? 'Yes ✓' : 'No ✗'}
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Export Button */}
+          <Button
+            onClick={handleExport}
+            disabled={isExporting}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {isExporting ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4 mr-2" />
+            )}
+            Export Map PNG
+          </Button>
+        </div>
+      </div>
+
+      {/* Map Container */}
+      <div className="flex-1 relative">
+        <div
+          ref={mapContainerRef}
+          className="w-full h-full"
+          style={{ minHeight: '500px' }}
+        />
+
+        {/* Map Legend */}
+        <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg z-[1000]">
+          <div className="text-sm font-medium text-slate-900 mb-2">Range Legend</div>
+          <div className="space-y-1.5">
+            {showRings[0] && (
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-4 h-0.5 bg-blue-500" />
+                <span className="text-slate-600">100% ({effectiveRange.toLocaleString()} nm)</span>
+              </div>
+            )}
+            {showRings[1] && (
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-4 h-0.5 bg-sky-400" style={{ borderStyle: 'dashed' }} />
+                <span className="text-slate-600">75% ({Math.round(effectiveRange * 0.75).toLocaleString()} nm)</span>
+              </div>
+            )}
+            {showRings[2] && (
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-4 h-0.5 bg-cyan-400" style={{ borderStyle: 'dashed' }} />
+                <span className="text-slate-600">50% ({Math.round(effectiveRange * 0.5).toLocaleString()} nm)</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
