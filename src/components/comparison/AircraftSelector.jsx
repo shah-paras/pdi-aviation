@@ -1,17 +1,8 @@
+import { useMemo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Plane, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const CATEGORIES = [
-  'Light Jet',
-  'Midsize Jet',
-  'Super Midsize Jet',
-  'Large Cabin Jet',
-  'Ultra Long Range',
-  'Turboprop',
-  'VIP Airliner'
-];
 
 export default function AircraftSelector({ 
   index, 
@@ -22,6 +13,12 @@ export default function AircraftSelector({
   onAircraftChange,
   onClear 
 }) {
+  // Derive categories dynamically from the aircraft data
+  const categories = useMemo(() =>
+    [...new Set(aircraft.map(a => a.category))].sort(),
+    [aircraft]
+  );
+
   const filteredAircraft = aircraft.filter(
     a => !selectedCategory || a.category === selectedCategory
   );
@@ -61,7 +58,7 @@ export default function AircraftSelector({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={null}>All Categories</SelectItem>
-              {CATEGORIES.map(cat => (
+              {categories.map(cat => (
                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
               ))}
             </SelectContent>

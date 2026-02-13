@@ -9,7 +9,6 @@ import AmortizationTable from '@/components/finance/AmortizationTable';
 
 const defaultValues = {
   purchasePrice: 5000000,
-  currency: 'USD',
   downPaymentPercent: 20,
   loanTermYears: 10,
   interestRate: 6.5,

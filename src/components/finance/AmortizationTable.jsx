@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Download } from 'lucide-react';
-
-const formatCurrency = (num) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(num);
-};
+import { useCurrency } from '@/hooks/use-currency';
 
 export default function AmortizationTable({ schedule, onExport }) {
+  const { formatPrice } = useCurrency();
+  const formatCurrency = (num) => formatPrice(num, { maximumFractionDigits: 2 });
   const [showAll, setShowAll] = useState(false);
   const displaySchedule = showAll ? schedule : schedule.slice(0, 12);
 

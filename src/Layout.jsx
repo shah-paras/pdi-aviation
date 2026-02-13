@@ -3,9 +3,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import {
   Plane, Menu, X,
-  BarChart3, Map, Calculator, BookOpen, Users, Phone
+  BarChart3, Map, Calculator, BookOpen, Users, Phone, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import CurrencySwitcher from '@/components/CurrencySwitcher';
 
 export default function Layout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -26,6 +27,7 @@ export default function Layout({ children }) {
     { name: 'Compare Aircraft', href: 'AircraftComparison', icon: BarChart3 },
     { name: 'Range Map', href: 'RangeMap', icon: Map },
     { name: 'Finance Calculator', href: 'FinanceCalculator', icon: Calculator },
+    { name: 'Fleet Directory', href: 'FleetDirectory', icon: ClipboardList },
     { name: 'Blog', href: 'Blog', icon: BookOpen },
     { name: 'About Us', href: 'AboutUs', icon: Users },
   ];
@@ -59,20 +61,17 @@ export default function Layout({ children }) {
           scrolled ? 'glass-effect shadow-xl' : 'nav-gradient'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="w-full px-4 sm:px-6">
+          <div className="flex items-center justify-between h-14 lg:h-16">
             {/* Logo */}
             <Link 
               to={createPageUrl('Home')} 
               className="flex items-center gap-3 group"
             >
-              <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-xl accent-gradient flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                <Plane className="w-5 h-5 lg:w-6 lg:h-6 text-slate-900" />
+              <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-lg accent-gradient flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+                <Plane className="w-4 h-4 lg:w-5 lg:h-5 text-slate-900" />
               </div>
-              <div className="hidden sm:block">
-                <span className="text-xl lg:text-2xl font-bold text-white tracking-tight">PDI Aviation</span>
-                <span className="block text-xs text-slate-400 -mt-0.5">Planedekho India</span>
-              </div>
+              <span className="hidden sm:block text-lg lg:text-xl font-bold text-white tracking-tight">PDI Aviation</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -81,23 +80,23 @@ export default function Layout({ children }) {
                 <Link
                   key={item.name}
                   to={createPageUrl(item.href)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
                     isActive(item.href)
                       ? 'bg-sky-400/20 text-sky-300'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <item.icon className="w-4 h-4" />
                   {item.name}
                 </Link>
               ))}
             </nav>
 
-            {/* CTA Button */}
-            <div className="hidden lg:flex items-center gap-4">
+            {/* CTA Button + Currency */}
+            <div className="hidden lg:flex items-center gap-3">
+              <CurrencySwitcher />
               <Link
                 to={createPageUrl('AboutUs') + '?section=contact'}
-                className="px-5 py-2.5 accent-gradient text-slate-900 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity shadow-lg flex items-center gap-2"
+                className="px-4 py-2 accent-gradient text-slate-900 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity shadow-md flex items-center gap-1.5"
               >
                 <Phone className="w-4 h-4" />
                 Contact Sales
@@ -124,6 +123,9 @@ export default function Layout({ children }) {
               className="lg:hidden border-t border-slate-700 glass-effect"
             >
               <div className="px-4 py-4 space-y-2">
+                <div className="pb-2 mb-2 border-b border-slate-700">
+                  <CurrencySwitcher className="w-full" />
+                </div>
                 {navItems.map((item) => (
                   <Link
                     key={item.name}
@@ -152,7 +154,7 @@ export default function Layout({ children }) {
       </header>
 
       {/* Main Content */}
-      <main className="pt-16 lg:pt-20">
+      <main className="pt-14 lg:pt-16">
         {children}
       </main>
 
@@ -183,6 +185,7 @@ export default function Layout({ children }) {
                 <li><Link to={createPageUrl('AircraftComparison')} className="hover:text-white transition-colors">Aircraft Comparison</Link></li>
                 <li><Link to={createPageUrl('RangeMap')} className="hover:text-white transition-colors">Range Map</Link></li>
                 <li><Link to={createPageUrl('FinanceCalculator')} className="hover:text-white transition-colors">Finance Calculator</Link></li>
+                <li><Link to={createPageUrl('FleetDirectory')} className="hover:text-white transition-colors">Fleet Directory</Link></li>
               </ul>
             </div>
 

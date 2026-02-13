@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -12,6 +12,7 @@ import { motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { createCircleGeoJSON, nmToKm, calculateZoomForRadius } from '@/lib/utils/mapUtils';
+import aircraftModels from '@/data/aircraftModels';
 
 const MAJOR_AIRPORTS = [
   { code: 'DEL', name: 'New Delhi (DEL)', lat: 28.5665, lng: 77.1031 },
@@ -39,16 +40,13 @@ export default function RangeMap() {
   const mapRef = useRef(null);
   const markersRef = useRef([]);
 
-  const aircraft = [
-    { id: '1', manufacturer: 'Gulfstream', model: 'G650ER', max_range_nm: 7500, cruise_speed_ktas: 516, thumbnail_url: null },
-    { id: '2', manufacturer: 'Bombardier', model: 'Global 7500', max_range_nm: 7700, cruise_speed_ktas: 516, thumbnail_url: null },
-    { id: '3', manufacturer: 'Dassault', model: 'Falcon 8X', max_range_nm: 6450, cruise_speed_ktas: 460, thumbnail_url: null },
-    { id: '4', manufacturer: 'Cessna', model: 'Citation Longitude', max_range_nm: 3500, cruise_speed_ktas: 476, thumbnail_url: null },
-    { id: '5', manufacturer: 'Embraer', model: 'Praetor 600', max_range_nm: 4018, cruise_speed_ktas: 466, thumbnail_url: null },
-    { id: '6', manufacturer: 'Pilatus', model: 'PC-24', max_range_nm: 2000, cruise_speed_ktas: 440, thumbnail_url: null },
-    { id: '7', manufacturer: 'Boeing', model: 'BBJ 737 MAX', max_range_nm: 6600, cruise_speed_ktas: 470, thumbnail_url: null },
-    { id: '8', manufacturer: 'Airbus', model: 'ACJ320neo', max_range_nm: 6000, cruise_speed_ktas: 460, thumbnail_url: null },
-  ];
+  // Filter to FW aircraft with range data for range visualization
+  const aircraft = useMemo(() =>
+    aircraftModels.filter(a =>
+      a.type === 'FW' && a.max_range_nm && a.max_range_nm > 0
+    ),
+    []
+  );
 
   const selectedAircraft = aircraft.find(a => a.id === selectedAircraftId);
   const maxRange = selectedAircraft?.max_range_nm || 2000;

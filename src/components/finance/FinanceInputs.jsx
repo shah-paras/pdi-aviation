@@ -3,8 +3,10 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DollarSign, Percent, Fuel, Shield } from 'lucide-react';
+import { useCurrency } from '@/hooks/use-currency';
 
 export default function FinanceInputs({ values, onChange }) {
+  const { currencySymbol } = useCurrency();
   const handleChange = (key, value) => {
     onChange({ ...values, [key]: value });
   };
@@ -26,33 +28,18 @@ export default function FinanceInputs({ values, onChange }) {
           <h3 className="font-semibold text-slate-900">Purchase Details</h3>
         </div>
         
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm text-slate-600 mb-1.5 block">Purchase Price (USD)</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
-              <Input
-                type="text"
-                value={formatCurrency(values.purchasePrice)}
-                onChange={(e) => handleChange('purchasePrice', parseCurrency(e.target.value))}
-                className="pl-7"
-              />
-            </div>
+        <div>
+          <Label className="text-sm text-slate-600 mb-1.5 block">Purchase Price (USD)</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
+            <Input
+              type="text"
+              value={formatCurrency(values.purchasePrice)}
+              onChange={(e) => handleChange('purchasePrice', parseCurrency(e.target.value))}
+              className="pl-7"
+            />
           </div>
-          <div>
-            <Label className="text-sm text-slate-600 mb-1.5 block">Currency</Label>
-            <Select value={values.currency} onValueChange={(v) => handleChange('currency', v)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD - US Dollar</SelectItem>
-                <SelectItem value="INR">INR - Indian Rupee</SelectItem>
-                <SelectItem value="EUR">EUR - Euro</SelectItem>
-                <SelectItem value="GBP">GBP - British Pound</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-xs text-slate-400 mt-1">All inputs in USD. Outputs converted via header currency switcher.</p>
         </div>
       </div>
 
@@ -191,7 +178,7 @@ export default function FinanceInputs({ values, onChange }) {
           <div>
             <Label className="text-sm text-slate-600 mb-1.5 block">Insurance ($/year)</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
                 value={formatCurrency(values.insurancePerYear)}
@@ -203,7 +190,7 @@ export default function FinanceInputs({ values, onChange }) {
           <div>
             <Label className="text-sm text-slate-600 mb-1.5 block">Hangar ($/year)</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
                 value={formatCurrency(values.hangarPerYear)}
@@ -215,7 +202,7 @@ export default function FinanceInputs({ values, onChange }) {
           <div>
             <Label className="text-sm text-slate-600 mb-1.5 block">Crew ($/year)</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
                 value={formatCurrency(values.crewPerYear)}
@@ -227,7 +214,7 @@ export default function FinanceInputs({ values, onChange }) {
           <div>
             <Label className="text-sm text-slate-600 mb-1.5 block">Management ($/year)</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
                 value={formatCurrency(values.managementPerYear)}

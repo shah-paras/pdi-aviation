@@ -1,16 +1,14 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DollarSign, TrendingUp, Clock, Fuel, 
+import {
+  DollarSign, TrendingUp, Clock, Fuel,
   PiggyBank, BarChart3, Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const formatCurrency = (num) => {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
-};
+import { useCurrency } from '@/hooks/use-currency';
 
 export default function FinanceResults({ values, calculations }) {
+  const { formatPrice: formatCurrency } = useCurrency();
   const {
     loanAmount,
     monthlyPayment,
