@@ -1,122 +1,347 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Plane, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Plane,
+  Gauge,
+  Ruler,
+  DollarSign,
+  Navigation,
+  Zap,
+  Users,
+  Wind,
+  ArrowUpFromDot,
+  Mountain,
+  Package,
+  BarChart3,
+  Trophy,
+} from 'lucide-react';
+import { useCurrency } from '@/hooks/use-currency';
 
-const CATEGORIES = [
-  'Light Jet',
-  'Midsize Jet',
-  'Super Midsize Jet',
-  'Large Cabin Jet',
-  'Ultra Long Range',
-  'Turboprop',
-  'VIP Airliner'
-];
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-export default function AircraftSelector({ 
-  index, 
-  selectedCategory, 
-  selectedAircraft, 
-  aircraft, 
-  onCategoryChange, 
-  onAircraftChange,
-  onClear 
-}) {
-  const filteredAircraft = aircraft.filter(
-    a => !selectedCategory || a.category === selectedCategory
+/** Pick the "best" value index from an array of numbers.
+ *  `dir` = 'max' means higher is better, 'min' means lower is better.
+ *  Returns an array of booleans aligned with `values`. */
+function bestIndices(values, dir = 'max') {
+  const nums = values.map(v => (typeof v === 'number' && !Number.isNaN(v) ? v : null));
+  const validNums = nums.filter(n => n !== null);
+  if (validNums.length < 2) return nums.map(() => false);
+
+  const target = dir === 'max' ? Math.max(...validNums) : Math.min(...validNums);
+  return nums.map(n => n !== null && n === target);
+}
+
+function fmtNum(value, unit = '') {
+  if (value == null || value === '' || Number.isNaN(value)) return 'N/A';
+  const formatted = typeof value === 'number' ? value.toLocaleString() : value;
+  return unit ? `${formatted} ${unit}` : formatted;
+}
+
+// ---------------------------------------------------------------------------
+// Spec section definitions
+// ---------------------------------------------------------------------------
+
+function buildSections(formatPrice) {
+  return [
+    {
+      title: 'Performance',
+      icon: Gauge,
+      rows: [
+        {
+          label: 'Max Range',
+          key: 'max_range_nm',
+          format: v => fmtNum(v, 'nm'),
+          best: 'max',
+          icon: Navigation,
+        },
+        {
+          label: 'Cruise Speed',
+          key: 'cruise_speed_ktas',
+          format: v => fmtNum(v, 'ktas'),
+          best: 'max',
+          icon: Zap,
+        },
+        {
+          label: 'Max Altitude',
+          key: 'max_altitude_ft',
+          format: v => fmtNum(v, 'ft'),
+          best: 'max',
+          icon: Mountain,
+        },
+        {
+          label: 'Takeoff Distance',
+          key: 'takeoff_distance_ft',
+          format: v => fmtNum(v, 'ft'),
+          best: 'min',
+          icon: ArrowUpFromDot,
+        },
+        {
+          label: 'Engines',
+          key: 'engines',
+          format: v => v || 'N/A',
+          best: null,
+          icon: Wind,
+        },
+      ],
+    },
+    {
+      title: 'Dimensions',
+      icon: Ruler,
+      rows: [
+        {
+          label: 'Max Passengers',
+          key: 'max_pax',
+          format: v => fmtNum(v),
+          best: 'max',
+          icon: Users,
+        },
+        {
+          label: 'Wingspan',
+          key: 'wingspan_ft',
+          format: v => fmtNum(v, 'ft'),
+          best: null,
+          icon: Ruler,
+        },
+        {
+          label: 'Cabin Length',
+          key: 'cabin_length_ft',
+          format: v => fmtNum(v, 'ft'),
+          best: 'max',
+          icon: Ruler,
+        },
+        {
+          label: 'Baggage Volume',
+          key: 'baggage_volume_cuft',
+          format: v => fmtNum(v, 'cu ft'),
+          best: 'max',
+          icon: Package,
+        },
+      ],
+    },
+    {
+      title: 'Pricing',
+      icon: DollarSign,
+      rows: [
+        {
+          label: 'List Price',
+          key: 'price_usd',
+          format: v => (typeof v === 'number' ? formatPrice(v) : 'N/A'),
+          best: 'min',
+          icon: DollarSign,
+        },
+        {
+          label: 'India Fleet Count',
+          key: 'india_fleet_count',
+          format: v => fmtNum(v),
+          best: 'max',
+          icon: BarChart3,
+        },
+      ],
+    },
+  ];
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function EmptyState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="flex flex-col items-center justify-center py-24 px-6 text-center"
+    >
+      <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-6">
+        <Plane className="w-10 h-10 text-slate-300" />
+      </div>
+      <h3 className="text-xl font-semibold text-slate-800 mb-2">
+        No Aircraft Selected
+      </h3>
+      <p className="text-slate-500 max-w-sm text-sm leading-relaxed">
+        Select up to 3 aircraft from the panel on the left to see a detailed
+        side-by-side comparison of their specifications.
+      </p>
+    </motion.div>
+  );
+}
+
+function AircraftHeader({ model, index }) {
+  return (
+    <motion.th
+      key={model.id}
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ delay: index * 0.05 }}
+      className="px-4 py-5 text-center align-top"
+    >
+      <div className="flex flex-col items-center gap-3">
+        {model.thumbnail_url ? (
+          <img
+            src={model.thumbnail_url}
+            alt={`${model.manufacturer} ${model.model}`}
+            className="w-28 h-16 object-cover rounded-lg border border-slate-200 shadow-sm"
+          />
+        ) : (
+          <div className="w-28 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center border border-slate-200">
+            <Plane className="w-7 h-7 text-slate-400" />
+          </div>
+        )}
+        <div>
+          <div className="font-semibold text-slate-900 text-sm leading-tight">
+            {model.manufacturer}
+          </div>
+          <div className="font-bold text-slate-900 text-base leading-tight">
+            {model.model}
+          </div>
+          <span className="inline-block mt-1.5 px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+            {model.category}
+          </span>
+        </div>
+      </div>
+    </motion.th>
+  );
+}
+
+function SectionHeading({ section, colCount }) {
+  const Icon = section.icon;
+  return (
+    <tr>
+      <td
+        colSpan={colCount + 1}
+        className="px-4 pt-6 pb-2 bg-slate-50/60"
+      >
+        <div className="flex items-center gap-2">
+          <Icon className="w-4 h-4 text-blue-600" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {section.title}
+          </span>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+function SpecRow({ row, models, rowIndex }) {
+  const values = models.map(m => m[row.key]);
+  const best = row.best ? bestIndices(values, row.best) : values.map(() => false);
+  const Icon = row.icon;
+
+  return (
+    <motion.tr
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: 0.02 * rowIndex }}
+      className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors"
+    >
+      <td className="px-4 py-3 text-sm text-slate-600 font-medium whitespace-nowrap">
+        <div className="flex items-center gap-2">
+          <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          {row.label}
+        </div>
+      </td>
+      {models.map((model, i) => (
+        <td key={model.id} className="px-4 py-3 text-sm text-center font-medium">
+          <span className={best[i] ? 'text-emerald-600 font-semibold' : 'text-slate-800'}>
+            {row.format(model[row.key])}
+          </span>
+          {best[i] && (
+            <Trophy className="inline-block w-3 h-3 ml-1 text-emerald-500 -mt-0.5" />
+          )}
+        </td>
+      ))}
+    </motion.tr>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
+export default function ComparisonTable({ selectedAircraft, aircraft }) {
+  const { formatPrice } = useCurrency();
+
+  const models = useMemo(
+    () =>
+      selectedAircraft
+        .map(id => aircraft.find(a => a.id === id))
+        .filter(Boolean),
+    [selectedAircraft, aircraft]
   );
 
-  const selectedModel = aircraft.find(a => a.id === selectedAircraft);
+  const sections = useMemo(() => buildSections(formatPrice), [formatPrice]);
+
+  if (models.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <EmptyState />
+      </div>
+    );
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="p-4 bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all"
+      className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
     >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-semibold text-sm">
-            {index + 1}
-          </div>
-          <span className="font-medium text-slate-700 text-sm">Aircraft {index + 1}</span>
-        </div>
-        {selectedAircraft && (
-          <button
-            onClick={onClear}
-            className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-slate-600"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        )}
+      {/* Sticky heading bar */}
+      <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
+        <BarChart3 className="w-4 h-4 text-slate-500" />
+        <span className="text-sm font-semibold text-slate-700">
+          Comparing {models.length} Aircraft
+        </span>
       </div>
 
-      <div className="space-y-3">
-        <div>
-          <Label className="text-xs text-slate-500 mb-1 block">Category</Label>
-          <Select value={selectedCategory || ''} onValueChange={onCategoryChange}>
-            <SelectTrigger className="w-full bg-slate-50 border-slate-200">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={null}>All Categories</SelectItem>
-              {CATEGORIES.map(cat => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="overflow-x-auto">
+        <table className="w-full table-fixed min-w-[520px]">
+          {/* Column widths */}
+          <colgroup>
+            <col className="w-44" />
+            {models.map(m => (
+              <col key={m.id} />
+            ))}
+          </colgroup>
 
-        <div>
-          <Label className="text-xs text-slate-500 mb-1 block">Model</Label>
-          <Select value={selectedAircraft || ''} onValueChange={onAircraftChange}>
-            <SelectTrigger className="w-full bg-slate-50 border-slate-200">
-              <SelectValue placeholder="Select aircraft" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredAircraft.length === 0 ? (
-                <div className="p-2 text-sm text-slate-500 text-center">No aircraft found</div>
-              ) : (
-                filteredAircraft.map(a => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.manufacturer} {a.model}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
+          {/* Aircraft header row */}
+          <thead>
+            <tr className="border-b border-slate-200 bg-white">
+              <th className="px-4 py-5" />
+              <AnimatePresence mode="popLayout">
+                {models.map((m, i) => (
+                  <AircraftHeader key={m.id} model={m} index={i} />
+                ))}
+              </AnimatePresence>
+            </tr>
+          </thead>
+
+          {/* Spec sections — each section is its own <tbody> */}
+          {sections.map(section => {
+            // Only show section if at least one row has data
+            const hasData = section.rows.some(row =>
+              models.some(m => m[row.key] != null && m[row.key] !== '')
+            );
+            if (!hasData) return null;
+
+            return (
+              <tbody key={section.title}>
+                <SectionHeading section={section} colCount={models.length} />
+                {section.rows.map((row, ri) => (
+                  <SpecRow
+                    key={row.key}
+                    row={row}
+                    models={models}
+                    rowIndex={ri}
+                  />
+                ))}
+              </tbody>
+            );
+          })}
+        </table>
       </div>
-
-      {/* Selected Aircraft Preview */}
-      {selectedModel && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="mt-4 p-3 bg-gradient-to-br from-slate-50 to-slate-100 rounded-lg border border-slate-200"
-        >
-          <div className="flex items-center gap-3">
-            {selectedModel.thumbnail_url ? (
-              <img 
-                src={selectedModel.thumbnail_url} 
-                alt={selectedModel.model}
-                className="w-16 h-10 object-cover rounded-md"
-              />
-            ) : (
-              <div className="w-16 h-10 bg-slate-200 rounded-md flex items-center justify-center">
-                <Plane className="w-5 h-5 text-slate-400" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="font-medium text-slate-900 text-sm truncate">
-                {selectedModel.manufacturer} {selectedModel.model}
-              </div>
-              <div className="text-xs text-slate-500">{selectedModel.category}</div>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </motion.div>
   );
 }

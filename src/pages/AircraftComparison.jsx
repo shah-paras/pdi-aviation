@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,8 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import AircraftSelector from '@/components/comparison/AircraftSelector';
 import ComparisonTable from '@/components/comparison/ComparisonTable';
+import { useCurrency } from '@/hooks/use-currency';
+import aircraftModels from '@/data/aircraftModels';
 
 export default function AircraftComparison() {
+  const { formatPrice } = useCurrency();
   const [selectedCategories, setSelectedCategories] = useState(['', '', '']);
   const [selectedAircraft, setSelectedAircraft] = useState(['', '', '']);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -23,16 +26,13 @@ export default function AircraftComparison() {
   const [saving, setSaving] = useState(false);
 
   const isLoading = false;
-  const aircraft = [
-    { id: '1', manufacturer: 'Gulfstream', model: 'G650ER', category: 'Ultra Long Range', max_range_nm: 7500, cruise_speed_ktas: 516, max_pax: 19, price_usd: 71500000, engines: '2x Rolls-Royce BR725', wingspan_ft: 99.7, cabin_length_ft: 53.6, baggage_volume_cuft: 195, max_altitude_ft: 51000, takeoff_distance_ft: 6000 },
-    { id: '2', manufacturer: 'Bombardier', model: 'Global 7500', category: 'Ultra Long Range', max_range_nm: 7700, cruise_speed_ktas: 516, max_pax: 19, price_usd: 75000000, engines: '2x GE Passport', wingspan_ft: 104, cabin_length_ft: 54.4, baggage_volume_cuft: 195, max_altitude_ft: 51000, takeoff_distance_ft: 5800 },
-    { id: '3', manufacturer: 'Dassault', model: 'Falcon 8X', category: 'Long Range', max_range_nm: 6450, cruise_speed_ktas: 460, max_pax: 16, price_usd: 58500000, engines: '3x PW307D', wingspan_ft: 86.3, cabin_length_ft: 42.8, baggage_volume_cuft: 140, max_altitude_ft: 51000, takeoff_distance_ft: 5880 },
-    { id: '4', manufacturer: 'Cessna', model: 'Citation Longitude', category: 'Super Midsize', max_range_nm: 3500, cruise_speed_ktas: 476, max_pax: 12, price_usd: 28950000, engines: '2x Honeywell HTF7700L', wingspan_ft: 68.9, cabin_length_ft: 25.2, baggage_volume_cuft: 112, max_altitude_ft: 45000, takeoff_distance_ft: 4810 },
-    { id: '5', manufacturer: 'Embraer', model: 'Praetor 600', category: 'Super Midsize', max_range_nm: 4018, cruise_speed_ktas: 466, max_pax: 12, price_usd: 21500000, engines: '2x Honeywell HTF7500E', wingspan_ft: 70.5, cabin_length_ft: 27.5, baggage_volume_cuft: 155, max_altitude_ft: 45000, takeoff_distance_ft: 4717 },
-    { id: '6', manufacturer: 'Pilatus', model: 'PC-24', category: 'Light', max_range_nm: 2000, cruise_speed_ktas: 440, max_pax: 11, price_usd: 10700000, engines: '2x Williams FJ44-4A', wingspan_ft: 55.9, cabin_length_ft: 23.3, baggage_volume_cuft: 90, max_altitude_ft: 45000, takeoff_distance_ft: 2930 },
-    { id: '7', manufacturer: 'Boeing', model: 'BBJ 737 MAX', category: 'VIP Airliner', max_range_nm: 6600, cruise_speed_ktas: 470, max_pax: 50, price_usd: 95000000, engines: '2x CFM LEAP-1B', wingspan_ft: 117.8, cabin_length_ft: 79.2, baggage_volume_cuft: 400, max_altitude_ft: 41000, takeoff_distance_ft: 5900 },
-    { id: '8', manufacturer: 'Airbus', model: 'ACJ320neo', category: 'VIP Airliner', max_range_nm: 6000, cruise_speed_ktas: 460, max_pax: 50, price_usd: 110000000, engines: '2x CFM LEAP-1A', wingspan_ft: 117.5, cabin_length_ft: 85.3, baggage_volume_cuft: 450, max_altitude_ft: 41000, takeoff_distance_ft: 6100 },
-  ];
+  // Filter to comparable aircraft types (jets, turboprops, VIP airliners)
+  const aircraft = useMemo(() =>
+    aircraftModels.filter(a =>
+      a.type === 'FW' && a.max_range_nm && a.cruise_speed_ktas
+    ),
+    []
+  );
 
   const handleCategoryChange = (index, value) => {
     const newCategories = [...selectedCategories];
@@ -87,12 +87,13 @@ export default function AircraftComparison() {
     const headers = ['Spec', ...models.map(m => `${m.manufacturer} ${m.model}`)];
     const specs = [
       ['Category', ...models.map(m => m.category)],
-      ['Price (New)', ...models.map(m => m.price_new_usd ? `$${m.price_new_usd.toLocaleString()}` : 'N/A')],
-      ['Price (Used)', ...models.map(m => m.price_used_usd ? `$${m.price_used_usd.toLocaleString()}` : 'N/A')],
+      ['Price (USD)', ...models.map(m => m.price_usd ? formatPrice(m.price_usd) : 'N/A')],
       ['Max Range (nm)', ...models.map(m => m.max_range_nm || 'N/A')],
       ['Cruise Speed (ktas)', ...models.map(m => m.cruise_speed_ktas || 'N/A')],
-      ['Max Passengers', ...models.map(m => m.max_passengers || 'N/A')],
-      ['Hourly Cost', ...models.map(m => m.operating_cost_per_hour ? `$${m.operating_cost_per_hour.toLocaleString()}` : 'N/A')]
+      ['Max Passengers', ...models.map(m => m.max_pax || 'N/A')],
+      ['Engines', ...models.map(m => m.engines || 'N/A')],
+      ['Wingspan (ft)', ...models.map(m => m.wingspan_ft || 'N/A')],
+      ['Cabin Length (ft)', ...models.map(m => m.cabin_length_ft || 'N/A')],
     ];
 
     const csvContent = [headers, ...specs].map(row => row.join(',')).join('\n');
