@@ -261,10 +261,22 @@ export default function RangeMap() {
                 <SelectValue placeholder="Select aircraft" />
               </SelectTrigger>
               <SelectContent>
-                {aircraft.map(a => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.manufacturer} {a.model} ({a.max_range_nm?.toLocaleString()} nm)
-                  </SelectItem>
+                {Object.entries(
+                  aircraft.reduce((groups, a) => {
+                    (groups[a.category] = groups[a.category] || []).push(a);
+                    return groups;
+                  }, {})
+                ).map(([category, models]) => (
+                  <div key={category}>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      {category}
+                    </div>
+                    {models.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.manufacturer} {a.model} ({a.max_range_nm?.toLocaleString()} nm)
+                      </SelectItem>
+                    ))}
+                  </div>
                 ))}
               </SelectContent>
             </Select>
