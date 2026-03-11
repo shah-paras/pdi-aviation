@@ -8,6 +8,7 @@ import {
   Map as MapIcon, Plane, MapPin, Download,
   Loader2, Target, Ruler, Info, Layers
 } from 'lucide-react';
+import AircraftSearchSelect from '@/components/range-map/AircraftSearchSelect';
 import { motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -256,30 +257,11 @@ export default function RangeMap() {
               <Plane className="w-4 h-4 text-sky-400" />
               Aircraft Model
             </Label>
-            <Select value={selectedAircraftId} onValueChange={setSelectedAircraftId}>
-              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
-                <SelectValue placeholder="Select aircraft" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(
-                  aircraft.reduce((groups, a) => {
-                    (groups[a.category] = groups[a.category] || []).push(a);
-                    return groups;
-                  }, {})
-                ).map(([category, models]) => (
-                  <div key={category}>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                      {category}
-                    </div>
-                    {models.map(a => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.manufacturer} {a.model} ({a.max_range_nm?.toLocaleString()} nm)
-                      </SelectItem>
-                    ))}
-                  </div>
-                ))}
-              </SelectContent>
-            </Select>
+            <AircraftSearchSelect
+              aircraft={aircraft}
+              value={selectedAircraftId}
+              onValueChange={setSelectedAircraftId}
+            />
           </div>
 
           {/* Selected Aircraft Info */}
@@ -365,6 +347,7 @@ export default function RangeMap() {
                       newRings[ring.index] = checked;
                       setShowRings(newRings);
                     }}
+                    aria-label={`Toggle ${ring.label}`}
                   />
                 </div>
               ))}

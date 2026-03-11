@@ -6,31 +6,27 @@
 
 import { Search, X, Plane } from 'lucide-react';
 import GradientBackground from '@/components/home/GradientBackground';
-import FloatingParticles from '@/components/home/FloatingParticles';
-import TextShimmer from '@/components/home/TextShimmer';
 
-export default function FleetHero({ search, onSearchChange, totalCount }) {
+export default function FleetHero({ search, onSearchChange, totalCount, title = 'Indian NSOP Fleet Directory', subtitle = 'Explore 133 non-scheduled operators and their aircraft fleets across India. Search by operator, registration, or aircraft model.', placeholder = 'Search by operator, registration (VT-XXX), or model...', counterLabel = 'operators registered', icon: Icon = Plane }) {
   return (
     <section className="relative bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-20 lg:py-28 overflow-hidden">
       <GradientBackground />
-      <FloatingParticles />
 
       <div className="relative z-10 max-w-3xl mx-auto text-center px-4">
         {/* Label */}
         <div className="flex items-center justify-center gap-2 text-sky-400 text-sm mb-4">
-          <Plane className="w-4 h-4" />
+          <Icon className="w-4 h-4" />
           <span>Fleet Directory</span>
         </div>
 
         {/* Title */}
         <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-          <TextShimmer>Premium Aircraft Catalog</TextShimmer>
+          {title}
         </h1>
 
         {/* Subtitle */}
         <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-          Explore the world&apos;s finest business jets. Compare specifications,
-          pricing, and performance across all categories.
+          {subtitle}
         </p>
 
         {/* Search */}
@@ -41,8 +37,8 @@ export default function FleetHero({ search, onSearchChange, totalCount }) {
             type="text"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search by manufacturer, model, or category..."
-            className="w-full h-12 pl-11 pr-10 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-slate-500 focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/25 focus:outline-none text-sm backdrop-blur-sm"
+            placeholder={placeholder}
+            className="w-full h-12 pl-11 pr-10 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/25 focus:outline-none text-sm shadow-inner"
           />
 
           {search && (
@@ -59,7 +55,7 @@ export default function FleetHero({ search, onSearchChange, totalCount }) {
 
         {/* Counter */}
         <p className="text-xs text-slate-500 mt-3 text-center">
-          {totalCount} aircraft available
+          {totalCount} {counterLabel}
         </p>
       </div>
     </section>

@@ -9,7 +9,7 @@ export default function EmptyState({ onClearFilters }) {
       className="flex flex-col items-center justify-center py-20 px-6 text-center"
     >
       <Plane className="w-16 h-16 text-slate-700 mb-6" />
-      <h3 className="text-xl font-semibold text-slate-300 mb-2">No aircraft found</h3>
+      <h3 className="text-xl font-semibold text-slate-300 mb-2">No operators found</h3>
       <p className="text-sm text-slate-500 max-w-md">
         Try adjusting your search or category filter to find what you&apos;re looking for.
       </p>

@@ -1,29 +1,56 @@
 /**
- * Fleet Directory — premium aircraft catalog page.
- * Browse ~66 business jets across 8 categories, filter, search, sort,
- * and select up to 3 for side-by-side comparison.
+ * Fleet Directory — NSOP operator directory page.
+ * Browse 137 Indian non-scheduled operators, filter by type/state,
+ * search by operator name, registration, or model.
  */
 
 import { useState, useMemo } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import aircraftModels, { getAllCategories } from '@/data/aircraftModels';
-import { useCompareSelection } from '@/hooks/useCompareSelection';
+import { motion } from 'framer-motion';
+import operators from '@/data/operators';
+import registrations from '@/data/registrations';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import FleetHero from '@/components/fleet/FleetHero';
-import FleetCatalogStats from '@/components/fleet/FleetCatalogStats';
+import FleetDirectoryStats from '@/components/fleet/FleetDirectoryStats';
 import CategoryTabs from '@/components/fleet/CategoryTabs';
 import FleetToolbar from '@/components/fleet/FleetToolbar';
-import AircraftCard from '@/components/fleet/AircraftCard';
+import OperatorCard from '@/components/fleet/OperatorCard';
 import EmptyState from '@/components/fleet/EmptyState';
-import CompareBar from '@/components/fleet/CompareBar';
-import SpotlightCard from '@/components/home/SpotlightCard';
 import { StaggerReveal, StaggerItem } from '@/components/home/StaggerReveal';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                           */
 /* ------------------------------------------------------------------ */
 
-const CATEGORIES = ['all', ...getAllCategories()];
+const TYPE_TABS = (() => {
+  const all = operators.length;
+  let fw = 0;
+  let rw = 0;
+  let balloon = 0;
+
+  for (const op of operators) {
+    const types = new Set((op.fleet || []).map((a) => a.type));
+    if (types.has('FW')) fw++;
+    if (types.has('RW')) rw++;
+    if (types.has('B')) balloon++;
+  }
+
+  return [
+    { key: 'all', label: 'All', count: all },
+    { key: 'FW', label: 'Fixed Wing', count: fw },
+    { key: 'RW', label: 'Rotary Wing', count: rw },
+    { key: 'B', label: 'Balloon', count: balloon },
+  ];
+})();
+
+const ALL_STATES = [...new Set(operators.map((op) => op.state))].sort();
 
 /* ------------------------------------------------------------------ */
 /* Sort comparators                                                    */
@@ -32,28 +59,13 @@ const CATEGORIES = ['all', ...getAllCategories()];
 function sortComparator(key) {
   switch (key) {
     case 'name-asc':
-      return (a, b) =>
-        `${a.manufacturer} ${a.model}`.localeCompare(
-          `${b.manufacturer} ${b.model}`,
-        );
+      return (a, b) => a.name.localeCompare(b.name);
     case 'name-desc':
-      return (a, b) =>
-        `${b.manufacturer} ${b.model}`.localeCompare(
-          `${a.manufacturer} ${a.model}`,
-        );
-    case 'price-asc':
-      return (a, b) =>
-        (a.new_price_usd ?? Infinity) - (b.new_price_usd ?? Infinity);
-    case 'price-desc':
-      return (a, b) =>
-        (b.new_price_usd ?? -1) - (a.new_price_usd ?? -1);
-    case 'range-desc':
-      return (a, b) => (b.max_range_nm ?? 0) - (a.max_range_nm ?? 0);
-    case 'speed-desc':
-      return (a, b) =>
-        (b.cruise_speed_ktas ?? 0) - (a.cruise_speed_ktas ?? 0);
-    case 'pax-desc':
-      return (a, b) => (b.max_pax ?? 0) - (a.max_pax ?? 0);
+      return (a, b) => b.name.localeCompare(a.name);
+    case 'fleet-desc':
+      return (a, b) => (b.totalAircraft ?? 0) - (a.totalAircraft ?? 0);
+    case 'state-asc':
+      return (a, b) => a.state.localeCompare(b.state);
     default:
       return () => 0;
   }
@@ -65,37 +77,52 @@ function sortComparator(key) {
 
 export default function FleetDirectory() {
   const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeType, setActiveType] = useState('all');
+  const [selectedState, setSelectedState] = useState('all');
   const [sortBy, setSortBy] = useState('name-asc');
+  const reducedMotion = useReducedMotion();
 
-  const { selected, isSelected, toggle, remove, clearAll, isFull, compareUrl } =
-    useCompareSelection();
+  /* ---- Filtered & sorted operators ---- */
+  const filteredOperators = useMemo(() => {
+    let list = operators;
 
-  /* ---- Filtered & sorted aircraft ---- */
-  const filteredAircraft = useMemo(() => {
-    let list = aircraftModels;
-
-    // Category filter
-    if (activeCategory !== 'all') {
-      list = list.filter((a) => a.category === activeCategory);
+    // Type filter — keep operators that have at least one aircraft of the selected type
+    if (activeType !== 'all') {
+      list = list.filter((op) =>
+        (op.fleet || []).some((a) => a.type === activeType),
+      );
     }
 
-    // Search filter (fuzzy across manufacturer, model, category, engines)
+    // State filter
+    if (selectedState !== 'all') {
+      list = list.filter((op) => op.state === selectedState);
+    }
+
+    // Search filter (operator name, registration VT-XXX, model name)
     const q = search.trim().toLowerCase();
     if (q) {
-      list = list.filter((a) => {
-        const haystack =
-          `${a.manufacturer} ${a.model} ${a.category} ${a.engines ?? ''}`.toLowerCase();
-        return haystack.includes(q);
+      list = list.filter((op) => {
+        // Match operator name
+        if (op.name.toLowerCase().includes(q)) return true;
+        // Match city or state
+        if (op.city.toLowerCase().includes(q)) return true;
+        if (op.state.toLowerCase().includes(q)) return true;
+        // Match any fleet registration or model
+        return (op.fleet || []).some(
+          (a) =>
+            a.registration?.toLowerCase().includes(q) ||
+            a.model?.toLowerCase().includes(q),
+        );
       });
     }
 
     return [...list].sort(sortComparator(sortBy));
-  }, [search, activeCategory, sortBy]);
+  }, [search, activeType, selectedState, sortBy]);
 
   const clearFilters = () => {
     setSearch('');
-    setActiveCategory('all');
+    setActiveType('all');
+    setSelectedState('all');
   };
 
   return (
@@ -104,62 +131,81 @@ export default function FleetDirectory() {
       <FleetHero
         search={search}
         onSearchChange={setSearch}
-        totalCount={aircraftModels.length}
+        totalCount={operators.length}
       />
 
       {/* Stats */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
-        <FleetCatalogStats aircraft={aircraftModels} />
-      </div>
+      <motion.div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10"
+        initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
+        <FleetDirectoryStats operators={operators} registrations={registrations} />
+      </motion.div>
 
-      {/* Category tabs */}
+      {/* Type tabs */}
       <CategoryTabs
-        categories={CATEGORIES}
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-        aircraft={aircraftModels}
+        tabs={TYPE_TABS}
+        activeTab={activeType}
+        onTabChange={setActiveType}
       />
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
-        <FleetToolbar
-          resultCount={filteredAircraft.length}
-          totalCount={aircraftModels.length}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-        />
+        {/* Toolbar */}
+        <motion.div
+          className="flex items-center justify-between py-3"
+          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <p className="text-sm text-slate-400">
+            Showing {filteredOperators.length} of {operators.length} operators
+          </p>
 
-        {/* Aircraft grid */}
-        {filteredAircraft.length > 0 ? (
-          <StaggerReveal className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <AnimatePresence mode="popLayout">
-              {filteredAircraft.map((aircraft) => (
-                <StaggerItem key={aircraft.id}>
-                  <SpotlightCard>
-                    <AircraftCard
-                      aircraft={aircraft}
-                      isSelected={isSelected(aircraft.id)}
-                      onToggleCompare={(a) => toggle(a.id)}
-                      isCompareFull={isFull}
-                    />
-                  </SpotlightCard>
-                </StaggerItem>
-              ))}
-            </AnimatePresence>
+          <div className="flex items-center gap-3">
+            {/* State filter dropdown */}
+            <Select value={selectedState} onValueChange={setSelectedState}>
+              <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 w-[160px]">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All States</SelectItem>
+                {ALL_STATES.map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Sort dropdown */}
+            <FleetToolbar
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
+          </div>
+        </motion.div>
+
+        {/* Operator grid */}
+        {filteredOperators.length > 0 ? (
+          <StaggerReveal
+            key={`${activeType}-${selectedState}`}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+          >
+            {filteredOperators.map((operator) => (
+              <StaggerItem key={operator.id}>
+                <OperatorCard operator={operator} />
+              </StaggerItem>
+            ))}
           </StaggerReveal>
         ) : (
           <EmptyState onClearFilters={clearFilters} />
         )}
       </main>
-
-      {/* Compare bar */}
-      <CompareBar
-        selected={selected}
-        aircraft={aircraftModels}
-        onRemove={remove}
-        onClearAll={clearAll}
-        compareUrl={compareUrl}
-      />
     </div>
   );
 }
