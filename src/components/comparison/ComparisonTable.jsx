@@ -9,9 +9,6 @@ import {
   Zap,
   Users,
   Wind,
-  ArrowUpFromDot,
-  Mountain,
-  Package,
   BarChart3,
   Trophy,
 } from 'lucide-react';
@@ -64,20 +61,6 @@ function buildSections(formatPrice) {
           icon: Zap,
         },
         {
-          label: 'Max Altitude',
-          key: 'max_altitude_ft',
-          format: v => fmtNum(v, 'ft'),
-          best: 'max',
-          icon: Mountain,
-        },
-        {
-          label: 'Takeoff Distance',
-          key: 'takeoff_distance_ft',
-          format: v => fmtNum(v, 'ft'),
-          best: 'min',
-          icon: ArrowUpFromDot,
-        },
-        {
           label: 'Engines',
           key: 'engines',
           format: v => v || 'N/A',
@@ -98,10 +81,17 @@ function buildSections(formatPrice) {
           icon: Users,
         },
         {
-          label: 'Wingspan',
-          key: 'wingspan_ft',
+          label: 'Cabin Height',
+          key: 'cabin_height_ft',
           format: v => fmtNum(v, 'ft'),
-          best: null,
+          best: 'max',
+          icon: Ruler,
+        },
+        {
+          label: 'Cabin Width',
+          key: 'cabin_width_ft',
+          format: v => fmtNum(v, 'ft'),
+          best: 'max',
           icon: Ruler,
         },
         {
@@ -111,13 +101,6 @@ function buildSections(formatPrice) {
           best: 'max',
           icon: Ruler,
         },
-        {
-          label: 'Baggage Volume',
-          key: 'baggage_volume_cuft',
-          format: v => fmtNum(v, 'cu ft'),
-          best: 'max',
-          icon: Package,
-        },
       ],
     },
     {
@@ -125,17 +108,36 @@ function buildSections(formatPrice) {
       icon: DollarSign,
       rows: [
         {
-          label: 'List Price',
-          key: 'price_usd',
+          label: 'New Price',
+          key: 'new_price_usd',
           format: v => (typeof v === 'number' ? formatPrice(v) : 'N/A'),
           best: 'min',
           icon: DollarSign,
         },
         {
-          label: 'India Fleet Count',
-          key: 'india_fleet_count',
-          format: v => fmtNum(v),
-          best: 'max',
+          label: 'Pre-Owned Low',
+          key: 'preowned_price_low_usd',
+          format: v => (typeof v === 'number' ? formatPrice(v) : 'N/A'),
+          best: 'min',
+          icon: DollarSign,
+        },
+        {
+          label: 'Pre-Owned High',
+          key: 'preowned_price_high_usd',
+          format: v => (typeof v === 'number' ? formatPrice(v) : 'N/A'),
+          best: null,
+          icon: DollarSign,
+        },
+        {
+          label: 'Production Status',
+          key: 'production_status',
+          format: v => {
+            if (v === 'in_production') return 'In Production';
+            if (v === 'discontinued') return 'Discontinued';
+            if (v === 'in_development') return 'In Development';
+            return 'N/A';
+          },
+          best: null,
           icon: BarChart3,
         },
       ],

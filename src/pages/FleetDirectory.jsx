@@ -1,21 +1,22 @@
 /**
- * Fleet Directory page -- browse Indian NSOP fleet data.
- * Supports search by operator name, VT-XXX registration, or aircraft model,
- * filtering by aircraft type and state.
+ * Fleet Directory — NSOP operator directory page.
+ * Browse 137 Indian non-scheduled operators, filter by type/state,
+ * search by operator name, registration, or model.
  */
 
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Search,
-  Plane,
-  Navigation,
-  Wind,
-  LayoutGrid,
-  X,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import operators from '@/data/operators';
+import registrations from '@/data/registrations';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+
+import FleetHero from '@/components/fleet/FleetHero';
+import FleetDirectoryStats from '@/components/fleet/FleetDirectoryStats';
+import CategoryTabs from '@/components/fleet/CategoryTabs';
+import FleetToolbar from '@/components/fleet/FleetToolbar';
+import OperatorCard from '@/components/fleet/OperatorCard';
+import EmptyState from '@/components/fleet/EmptyState';
+import { StaggerReveal, StaggerItem } from '@/components/home/StaggerReveal';
 import {
   Select,
   SelectContent,
@@ -23,30 +24,52 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import operators from '@/data/operators';
-import registrations from '@/data/registrations';
-import aircraftModels from '@/data/aircraftModels';
-import FleetStats from '@/components/fleet/FleetStats';
-import OperatorCard from '@/components/fleet/OperatorCard';
-import RegistrationBadge from '@/components/fleet/RegistrationBadge';
 
 /* ------------------------------------------------------------------ */
 /* Constants                                                           */
 /* ------------------------------------------------------------------ */
 
-const TYPE_FILTERS = [
-  { key: 'all', label: 'All', icon: LayoutGrid },
-  { key: 'FW', label: 'Fixed Wing', icon: Plane },
-  { key: 'RW', label: 'Rotary Wing', icon: Navigation },
-  { key: 'B', label: 'Balloon', icon: Wind },
-];
+const TYPE_TABS = (() => {
+  const all = operators.length;
+  let fw = 0;
+  let rw = 0;
+  let balloon = 0;
+
+  for (const op of operators) {
+    const types = new Set((op.fleet || []).map((a) => a.type));
+    if (types.has('FW')) fw++;
+    if (types.has('RW')) rw++;
+    if (types.has('B')) balloon++;
+  }
+
+  return [
+    { key: 'all', label: 'All', count: all },
+    { key: 'FW', label: 'Fixed Wing', count: fw },
+    { key: 'RW', label: 'Rotary Wing', count: rw },
+    { key: 'B', label: 'Balloon', count: balloon },
+  ];
+})();
+
+const ALL_STATES = [...new Set(operators.map((op) => op.state))].sort();
 
 /* ------------------------------------------------------------------ */
-/* Helpers                                                             */
+/* Sort comparators                                                    */
 /* ------------------------------------------------------------------ */
 
-/** True when the query looks like a VT-XXX registration search. */
-const isRegistrationQuery = (q) => /^vt[-\s]?/i.test(q.trim());
+function sortComparator(key) {
+  switch (key) {
+    case 'name-asc':
+      return (a, b) => a.name.localeCompare(b.name);
+    case 'name-desc':
+      return (a, b) => b.name.localeCompare(a.name);
+    case 'fleet-desc':
+      return (a, b) => (b.totalAircraft ?? 0) - (a.totalAircraft ?? 0);
+    case 'state-asc':
+      return (a, b) => a.state.localeCompare(b.state);
+    default:
+      return () => 0;
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Component                                                           */
@@ -54,260 +77,135 @@ const isRegistrationQuery = (q) => /^vt[-\s]?/i.test(q.trim());
 
 export default function FleetDirectory() {
   const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [stateFilter, setStateFilter] = useState('all');
+  const [activeType, setActiveType] = useState('all');
+  const [selectedState, setSelectedState] = useState('all');
+  const [sortBy, setSortBy] = useState('name-asc');
+  const reducedMotion = useReducedMotion();
 
-  // Unique states from operators, sorted alphabetically
-  const allStates = useMemo(
-    () =>
-      [...new Set((operators || []).map((o) => o.state))]
-        .filter(Boolean)
-        .sort(),
-    []
-  );
-
-  // ----- Registration search results -----
-  const registrationResults = useMemo(() => {
-    if (!search || !isRegistrationQuery(search)) return [];
-    const q = search.trim().toUpperCase();
-    return (registrations || []).filter((r) =>
-      r.registration.toUpperCase().includes(q)
-    );
-  }, [search]);
-
-  // ----- Filtered operators -----
+  /* ---- Filtered & sorted operators ---- */
   const filteredOperators = useMemo(() => {
-    let list = operators || [];
-    const q = search.trim().toLowerCase();
+    let list = operators;
 
-    // Type filter: keep only operators that have at least one matching aircraft
-    if (typeFilter !== 'all') {
-      list = list
-        .map((op) => {
-          const matchingFleet = (op.fleet || []).filter(
-            (a) => a.type === typeFilter
-          );
-          if (matchingFleet.length === 0) return null;
-          return { ...op, fleet: matchingFleet, totalAircraft: matchingFleet.length };
-        })
-        .filter(Boolean);
+    // Type filter — keep operators that have at least one aircraft of the selected type
+    if (activeType !== 'all') {
+      list = list.filter((op) =>
+        (op.fleet || []).some((a) => a.type === activeType),
+      );
     }
 
     // State filter
-    if (stateFilter !== 'all') {
-      list = list.filter((op) => op.state === stateFilter);
+    if (selectedState !== 'all') {
+      list = list.filter((op) => op.state === selectedState);
     }
 
-    // Search filter
+    // Search filter (operator name, registration VT-XXX, model name)
+    const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((op) => {
-        const nameMatch = op.name.toLowerCase().includes(q);
-        const regMatch = (op.fleet || []).some((a) =>
-          a.registration.toLowerCase().includes(q)
+        // Match operator name
+        if (op.name.toLowerCase().includes(q)) return true;
+        // Match city or state
+        if (op.city.toLowerCase().includes(q)) return true;
+        if (op.state.toLowerCase().includes(q)) return true;
+        // Match any fleet registration or model
+        return (op.fleet || []).some(
+          (a) =>
+            a.registration?.toLowerCase().includes(q) ||
+            a.model?.toLowerCase().includes(q),
         );
-        const modelMatch = (op.fleet || []).some((a) =>
-          a.model.toLowerCase().includes(q)
-        );
-        return nameMatch || regMatch || modelMatch;
       });
     }
 
-    return list;
-  }, [search, typeFilter, stateFilter]);
-
-  const hasActiveFilters =
-    search.trim() !== '' || typeFilter !== 'all' || stateFilter !== 'all';
+    return [...list].sort(sortComparator(sortBy));
+  }, [search, activeType, selectedState, sortBy]);
 
   const clearFilters = () => {
     setSearch('');
-    setTypeFilter('all');
-    setStateFilter('all');
+    setActiveType('all');
+    setSelectedState('all');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
-            <Plane className="w-4 h-4" />
-            <span>Fleet Directory</span>
-          </div>
-          <h1 className="text-3xl lg:text-4xl font-bold mb-3">
-            Indian NSOP Fleet Directory
-          </h1>
-          <p className="text-slate-300 max-w-2xl">
-            Browse non-scheduled operator permits, fleet compositions, and
-            aircraft registrations across India.
+    <div className="min-h-screen bg-slate-950">
+      {/* Hero */}
+      <FleetHero
+        search={search}
+        onSearchChange={setSearch}
+        totalCount={operators.length}
+      />
+
+      {/* Stats */}
+      <motion.div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10"
+        initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5 }}
+      >
+        <FleetDirectoryStats operators={operators} registrations={registrations} />
+      </motion.div>
+
+      {/* Type tabs */}
+      <CategoryTabs
+        tabs={TYPE_TABS}
+        activeTab={activeType}
+        onTabChange={setActiveType}
+      />
+
+      {/* Main content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+        {/* Toolbar */}
+        <motion.div
+          className="flex items-center justify-between py-3"
+          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <p className="text-sm text-slate-400">
+            Showing {filteredOperators.length} of {operators.length} operators
           </p>
-        </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Stats */}
-        <FleetStats operators={operators} registrations={registrations} />
+          <div className="flex items-center gap-3">
+            {/* State filter dropdown */}
+            <Select value={selectedState} onValueChange={setSelectedState}>
+              <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 w-[160px]">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All States</SelectItem>
+                {ALL_STATES.map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        {/* Filters bar */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search operator, registration (VT-XXX), or aircraft model..."
-              className="pl-10 h-11"
+            {/* Sort dropdown */}
+            <FleetToolbar
+              sortBy={sortBy}
+              onSortChange={setSortBy}
             />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
           </div>
-
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            {/* Type tabs */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {TYPE_FILTERS.map((tf) => {
-                const Icon = tf.icon;
-                const active = typeFilter === tf.key;
-                return (
-                  <Button
-                    key={tf.key}
-                    variant={active ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setTypeFilter(tf.key)}
-                    className={
-                      active
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                        : 'text-slate-600'
-                    }
-                  >
-                    <Icon className="w-4 h-4 mr-1.5" />
-                    {tf.label}
-                  </Button>
-                );
-              })}
-            </div>
-
-            {/* State filter */}
-            <div className="sm:ml-auto w-full sm:w-56">
-              <Select
-                value={stateFilter}
-                onValueChange={setStateFilter}
-              >
-                <SelectTrigger className="h-9 text-sm">
-                  <SelectValue placeholder="All States" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All States</SelectItem>
-                  {allStates.map((state) => (
-                    <SelectItem key={state} value={state}>
-                      {state}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Clear filters */}
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="text-slate-500 hover:text-slate-700"
-              >
-                <X className="w-4 h-4 mr-1" />
-                Clear
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Registration quick results */}
-        {registrationResults.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-blue-200 shadow-sm p-4 sm:p-6"
-          >
-            <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-              <Search className="w-4 h-4 text-blue-600" />
-              Registration Matches ({registrationResults.length})
-            </h3>
-            <div className="grid gap-2">
-              {registrationResults.map((r) => (
-                <div
-                  key={r.registration}
-                  className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <RegistrationBadge
-                      registration={r.registration}
-                      type={r.type}
-                    />
-                    <span className="text-sm text-slate-700 font-medium truncate">
-                      {r.model}
-                    </span>
-                  </div>
-                  <span className="text-xs text-slate-500 flex-shrink-0">
-                    {r.operatorName}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
+        </motion.div>
 
         {/* Operator grid */}
         {filteredOperators.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredOperators.map((op) => (
-              <motion.div
-                key={op.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25 }}
-              >
-                <OperatorCard operator={op} />
-              </motion.div>
+          <StaggerReveal
+            key={`${activeType}-${selectedState}`}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+          >
+            {filteredOperators.map((operator) => (
+              <StaggerItem key={operator.id}>
+                <OperatorCard operator={operator} />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerReveal>
         ) : (
-          <div className="text-center py-16">
-            <Plane className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-700 mb-1">
-              No operators found
-            </h3>
-            <p className="text-sm text-slate-500 max-w-md mx-auto">
-              Try adjusting your search query or filters to find what you are
-              looking for.
-            </p>
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearFilters}
-                className="mt-4"
-              >
-                Clear all filters
-              </Button>
-            )}
-          </div>
+          <EmptyState onClearFilters={clearFilters} />
         )}
-
-        {/* Result count */}
-        {filteredOperators.length > 0 && (
-          <p className="text-xs text-slate-400 text-center pt-2">
-            Showing {filteredOperators.length} of {(operators || []).length}{' '}
-            operators
-          </p>
-        )}
-      </div>
+      </main>
     </div>
   );
 }

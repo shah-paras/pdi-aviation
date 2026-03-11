@@ -1,6 +1,6 @@
 /**
- * Compact card displaying a single NSOP operator and its fleet.
- * Includes an expandable section with aircraft details.
+ * Dark-themed card displaying a single NSOP operator and its fleet.
+ * Glassmorphic style with expandable fleet section.
  */
 
 import { useState } from 'react';
@@ -18,9 +18,9 @@ import RegistrationBadge from './RegistrationBadge';
 
 const typeLabel = { FW: 'Fixed Wing', RW: 'Rotary Wing', B: 'Balloon' };
 const typeBadgeClass = {
-  FW: 'bg-blue-50 text-blue-700 border-blue-200',
-  RW: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  B: 'bg-amber-50 text-amber-700 border-amber-200',
+  FW: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  RW: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  B: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
 };
 
 export default function OperatorCard({ operator }) {
@@ -38,20 +38,25 @@ export default function OperatorCard({ operator }) {
     : 'N/A';
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all">
+    <div
+      className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden
+        hover:border-sky-500/30 hover:shadow-lg hover:shadow-sky-500/10
+        focus-within:ring-1 focus-within:ring-sky-500/30
+        transition-all duration-300 group"
+    >
       {/* Card header */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-sm font-bold text-slate-900 leading-snug">
+          <h3 className="text-sm font-bold text-white leading-snug">
             {operator.name}
           </h3>
-          <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-700">
+          <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-500/20 text-sky-400">
             <Plane className="w-3 h-3" />
             {operator.totalAircraft}
           </span>
         </div>
 
-        <div className="flex items-center gap-1 text-xs text-slate-500 mb-1.5">
+        <div className="flex items-center gap-1 text-xs text-slate-400 mb-1.5">
           <MapPin className="w-3 h-3 flex-shrink-0" />
           <span className="truncate">
             {operator.city}, {operator.state}
@@ -74,7 +79,7 @@ export default function OperatorCard({ operator }) {
       {fleet.length > 0 && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between px-4 py-2.5 border-t border-slate-100 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+          className="w-full flex items-center justify-between px-4 py-3 border-t border-white/5 text-xs font-medium text-slate-400 hover:bg-white/5 transition-colors"
         >
           <span>
             {expanded ? 'Hide' : 'Show'} Fleet ({fleet.length} aircraft)
@@ -98,18 +103,18 @@ export default function OperatorCard({ operator }) {
             transition={{ duration: 0.25, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-3 space-y-2 border-t border-slate-100 pt-3">
+            <div className="px-4 pb-3 space-y-2 border-t border-white/5 pt-3">
               {fleet.map((aircraft, idx) => (
                 <div
                   key={aircraft.registration || idx}
-                  className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg bg-slate-50"
+                  className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg bg-white/5"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <RegistrationBadge
                       registration={aircraft.registration}
                       type={aircraft.type}
                     />
-                    <span className="text-xs text-slate-700 font-medium truncate">
+                    <span className="text-xs text-slate-300 font-medium truncate">
                       {aircraft.model}
                     </span>
                   </div>
@@ -117,7 +122,7 @@ export default function OperatorCard({ operator }) {
                     <span
                       className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
                         typeBadgeClass[aircraft.type] ||
-                        'bg-slate-50 text-slate-600 border-slate-200'
+                        'bg-slate-500/20 text-slate-400 border-slate-500/30'
                       }`}
                     >
                       {aircraft.type}

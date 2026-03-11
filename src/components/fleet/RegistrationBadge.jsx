@@ -1,16 +1,16 @@
 /**
- * Styled badge for VT-XXX aircraft registration codes.
+ * Dark-themed badge for VT-XXX aircraft registration codes.
  * Color-coded by aircraft type: FW (blue), RW (green), B (amber).
  */
 
 const typeStyles = {
-  FW: 'bg-blue-100 text-blue-700',
-  RW: 'bg-emerald-100 text-emerald-700',
-  B: 'bg-amber-100 text-amber-700',
+  FW: 'bg-blue-500/20 text-blue-400',
+  RW: 'bg-emerald-500/20 text-emerald-400',
+  B: 'bg-amber-500/20 text-amber-400',
 };
 
 export default function RegistrationBadge({ registration, type }) {
-  const colorClass = typeStyles[type] || 'bg-slate-100 text-slate-700';
+  const colorClass = typeStyles[type] || 'bg-slate-500/20 text-slate-400';
 
   return (
     <span

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +12,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { useSearchParams } from 'react-router-dom';
 import AircraftSelector from '@/components/comparison/AircraftSelector';
 import ComparisonTable from '@/components/comparison/ComparisonTable';
 import { useCurrency } from '@/hooks/use-currency';
@@ -25,6 +26,8 @@ export default function AircraftComparison() {
   const [comparisonName, setComparisonName] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [searchParams] = useSearchParams();
+
   const isLoading = false;
   // Filter to comparable aircraft types (jets, turboprops, VIP airliners)
   const aircraft = useMemo(() =>
@@ -33,6 +36,21 @@ export default function AircraftComparison() {
     ),
     []
   );
+
+  // Pre-populate from URL params (e.g., ?ids=id1,id2,id3)
+  useEffect(() => {
+    const idsParam = searchParams.get('ids');
+    if (idsParam) {
+      const ids = idsParam.split(',').slice(0, 3);
+      setSelectedAircraft(ids.concat(Array(3 - ids.length).fill('')));
+      // Set categories for each pre-populated aircraft
+      const newCategories = ids.map(id => {
+        const model = aircraft.find(a => a.id === id);
+        return model?.category || '';
+      }).concat(Array(3 - ids.length).fill(''));
+      setSelectedCategories(newCategories);
+    }
+  }, [searchParams, aircraft]);
 
   const handleCategoryChange = (index, value) => {
     const newCategories = [...selectedCategories];
@@ -87,13 +105,18 @@ export default function AircraftComparison() {
     const headers = ['Spec', ...models.map(m => `${m.manufacturer} ${m.model}`)];
     const specs = [
       ['Category', ...models.map(m => m.category)],
-      ['Price (USD)', ...models.map(m => m.price_usd ? formatPrice(m.price_usd) : 'N/A')],
+      ['New Price (USD)', ...models.map(m => m.new_price_usd ? formatPrice(m.new_price_usd) : 'N/A')],
+      ['Pre-Owned Low (USD)', ...models.map(m => m.preowned_price_low_usd ? formatPrice(m.preowned_price_low_usd) : 'N/A')],
+      ['Pre-Owned High (USD)', ...models.map(m => m.preowned_price_high_usd ? formatPrice(m.preowned_price_high_usd) : 'N/A')],
+      ['Production Status', ...models.map(m => m.production_status || 'N/A')],
       ['Max Range (nm)', ...models.map(m => m.max_range_nm || 'N/A')],
       ['Cruise Speed (ktas)', ...models.map(m => m.cruise_speed_ktas || 'N/A')],
       ['Max Passengers', ...models.map(m => m.max_pax || 'N/A')],
       ['Engines', ...models.map(m => m.engines || 'N/A')],
-      ['Wingspan (ft)', ...models.map(m => m.wingspan_ft || 'N/A')],
+      ['Cabin Height (ft)', ...models.map(m => m.cabin_height_ft || 'N/A')],
+      ['Cabin Width (ft)', ...models.map(m => m.cabin_width_ft || 'N/A')],
       ['Cabin Length (ft)', ...models.map(m => m.cabin_length_ft || 'N/A')],
+      ['Notes', ...models.map(m => m.notes || 'N/A')],
     ];
 
     const csvContent = [headers, ...specs].map(row => row.join(',')).join('\n');
