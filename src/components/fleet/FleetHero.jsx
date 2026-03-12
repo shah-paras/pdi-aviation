@@ -7,7 +7,8 @@
 import { Search, X, Plane } from 'lucide-react';
 import GradientBackground from '@/components/home/GradientBackground';
 
-export default function FleetHero({ search, onSearchChange, totalCount, title = 'Indian NSOP Fleet Directory', subtitle = 'Explore 133 non-scheduled operators and their aircraft fleets across India. Search by operator, registration, or aircraft model.', placeholder = 'Search by operator, registration (VT-XXX), or model...', counterLabel = 'operators registered', icon: Icon = Plane }) {
+export default function FleetHero({ search, onSearchChange, totalCount, title = 'Indian NSOP Fleet Directory', subtitle, placeholder = 'Search by operator, registration (VT-XXX), or model...', counterLabel = 'operators registered', icon: Icon = Plane }) {
+  const displaySubtitle = subtitle || `Explore ${totalCount} non-scheduled operators and their aircraft fleets across India. Search by operator, registration, or aircraft model.`;
   return (
     <section className="relative bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 py-20 lg:py-28 overflow-hidden">
       <GradientBackground />
@@ -26,7 +27,7 @@ export default function FleetHero({ search, onSearchChange, totalCount, title = 
 
         {/* Subtitle */}
         <p className="text-slate-400 text-lg mb-8 max-w-xl mx-auto">
-          {subtitle}
+          {displaySubtitle}
         </p>
 
         {/* Search */}

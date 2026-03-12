@@ -4,11 +4,9 @@
  * search by operator name, registration, or model.
  */
 
-import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import operators from '@/data/operators';
 import registrations from '@/data/registrations';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 import FleetHero from '@/components/fleet/FleetHero';
 import FleetDirectoryStats from '@/components/fleet/FleetDirectoryStats';
@@ -16,7 +14,7 @@ import CategoryTabs from '@/components/fleet/CategoryTabs';
 import FleetToolbar from '@/components/fleet/FleetToolbar';
 import OperatorCard from '@/components/fleet/OperatorCard';
 import EmptyState from '@/components/fleet/EmptyState';
-import { StaggerReveal, StaggerItem } from '@/components/home/StaggerReveal';
+import FleetDetailModal from '@/components/fleet/FleetDetailModal';
 import {
   Select,
   SelectContent,
@@ -72,15 +70,61 @@ function sortComparator(key) {
 }
 
 /* ------------------------------------------------------------------ */
+/* CSS animation keyframes (injected once)                             */
+/* ------------------------------------------------------------------ */
+
+const FADE_STYLE_ID = 'fleet-fade-in-style';
+
+function ensureFadeStyle() {
+  if (document.getElementById(FADE_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = FADE_STYLE_ID;
+  style.textContent = `
+    @keyframes fleetFadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fleet-card-animate {
+      opacity: 0;
+      animation: fleetFadeInUp 0.4s ease-out forwards;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+/* ------------------------------------------------------------------ */
 /* Component                                                           */
 /* ------------------------------------------------------------------ */
 
 export default function FleetDirectory() {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeType, setActiveType] = useState('all');
   const [selectedState, setSelectedState] = useState('all');
   const [sortBy, setSortBy] = useState('name-asc');
-  const reducedMotion = useReducedMotion();
+  const [modalOperator, setModalOperator] = useState(null);
+  const debounceRef = useRef(null);
+
+  // Inject CSS animation keyframes
+  useEffect(() => {
+    ensureFadeStyle();
+  }, []);
+
+  // Debounce search input (200ms)
+  const handleSearchChange = useCallback((value) => {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+    }, 200);
+  }, []);
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   /* ---- Filtered & sorted operators ---- */
   const filteredOperators = useMemo(() => {
@@ -99,15 +143,12 @@ export default function FleetDirectory() {
     }
 
     // Search filter (operator name, registration VT-XXX, model name)
-    const q = search.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (q) {
       list = list.filter((op) => {
-        // Match operator name
         if (op.name.toLowerCase().includes(q)) return true;
-        // Match city or state
         if (op.city.toLowerCase().includes(q)) return true;
         if (op.state.toLowerCase().includes(q)) return true;
-        // Match any fleet registration or model
         return (op.fleet || []).some(
           (a) =>
             a.registration?.toLowerCase().includes(q) ||
@@ -117,33 +158,33 @@ export default function FleetDirectory() {
     }
 
     return [...list].sort(sortComparator(sortBy));
-  }, [search, activeType, selectedState, sortBy]);
+  }, [debouncedSearch, activeType, selectedState, sortBy]);
 
   const clearFilters = () => {
     setSearch('');
+    setDebouncedSearch('');
     setActiveType('all');
     setSelectedState('all');
   };
+
+  // Stable callback for OperatorCard memo
+  const handleViewFleet = useCallback((operator) => {
+    setModalOperator(operator);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Hero */}
       <FleetHero
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={handleSearchChange}
         totalCount={operators.length}
       />
 
       {/* Stats */}
-      <motion.div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10"
-        initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.5 }}
-      >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10">
         <FleetDirectoryStats operators={operators} registrations={registrations} />
-      </motion.div>
+      </div>
 
       {/* Type tabs */}
       <CategoryTabs
@@ -154,14 +195,8 @@ export default function FleetDirectory() {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
-        {/* Toolbar */}
-        <motion.div
-          className="flex items-center justify-between py-3"
-          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
+        {/* Toolbar — stacks on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3">
           <p className="text-sm text-slate-400">
             Showing {filteredOperators.length} of {operators.length} operators
           </p>
@@ -169,7 +204,7 @@ export default function FleetDirectory() {
           <div className="flex items-center gap-3">
             {/* State filter dropdown */}
             <Select value={selectedState} onValueChange={setSelectedState}>
-              <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 w-[160px]">
+              <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 flex-1 sm:flex-none sm:w-[160px]">
                 <SelectValue placeholder="All States" />
               </SelectTrigger>
               <SelectContent>
@@ -188,24 +223,42 @@ export default function FleetDirectory() {
               onSortChange={setSortBy}
             />
           </div>
-        </motion.div>
+        </div>
 
-        {/* Operator grid */}
+        {/* Operator grid — CSS animation instead of 137 motion.divs */}
         {filteredOperators.length > 0 ? (
-          <StaggerReveal
-            key={`${activeType}-${selectedState}`}
+          <div
+            key={`${activeType}-${selectedState}-${debouncedSearch}`}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
           >
-            {filteredOperators.map((operator) => (
-              <StaggerItem key={operator.id}>
-                <OperatorCard operator={operator} />
-              </StaggerItem>
+            {filteredOperators.map((operator, index) => (
+              <div
+                key={operator.id}
+                className="fleet-card-animate"
+                style={{
+                  animationDelay: index < 12 ? `${index * 50}ms` : '0ms',
+                }}
+              >
+                <OperatorCard
+                  operator={operator}
+                  onViewFleet={handleViewFleet}
+                />
+              </div>
             ))}
-          </StaggerReveal>
+          </div>
         ) : (
           <EmptyState onClearFilters={clearFilters} />
         )}
       </main>
+
+      {/* Fleet detail modal */}
+      <FleetDetailModal
+        operator={modalOperator}
+        open={!!modalOperator}
+        onOpenChange={(open) => {
+          if (!open) setModalOperator(null);
+        }}
+      />
     </div>
   );
 }

@@ -131,7 +131,7 @@ export default function AircraftComparison() {
   const activeSelections = selectedAircraft.filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-950">
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -151,16 +151,16 @@ export default function AircraftComparison() {
           {/* Left Panel - Selectors */}
           <div className="lg:w-80 flex-shrink-0">
             <div className="sticky top-24 space-y-4">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-sm overflow-hidden">
+                <div className="p-4 bg-slate-900 border-b border-white/10 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-slate-600" />
-                    <span className="font-semibold text-slate-900">Select Aircraft</span>
+                    <Filter className="w-4 h-4 text-slate-400" />
+                    <span className="font-semibold text-white">Select Aircraft</span>
                   </div>
                   {activeSelections > 0 && (
                     <button
                       onClick={handleClearAll}
-                      className="text-xs text-slate-500 hover:text-slate-700 flex items-center gap-1"
+                      className="text-xs text-slate-400 hover:text-slate-300 flex items-center gap-1"
                     >
                       <RefreshCw className="w-3 h-3" />
                       Clear All
@@ -191,11 +191,11 @@ export default function AircraftComparison() {
               </div>
 
               {/* Action Buttons */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-3">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-sm p-4 space-y-3">
                 <Button
                   onClick={() => setSaveDialogOpen(true)}
                   disabled={activeSelections === 0}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white"
+                  className="w-full bg-sky-600 hover:bg-sky-700 text-white"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Save Comparison
@@ -204,7 +204,7 @@ export default function AircraftComparison() {
                   onClick={handleExportCSV}
                   disabled={activeSelections === 0}
                   variant="outline"
-                  className="w-full"
+                  className="w-full border-slate-700 text-slate-300 hover:bg-white/5"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Export CSV
@@ -234,7 +234,7 @@ export default function AircraftComparison() {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div>
-              <label className="text-sm font-medium text-slate-700 block mb-1.5">
+              <label className="text-sm font-medium text-slate-300 block mb-1.5">
                 Comparison Name
               </label>
               <Input
@@ -250,7 +250,7 @@ export default function AircraftComparison() {
               <Button 
                 onClick={handleSaveComparison}
                 disabled={!comparisonName.trim() || saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-sky-600 hover:bg-sky-700 text-white"
               >
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Save

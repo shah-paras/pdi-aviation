@@ -37,7 +37,7 @@ export default function FinanceCalculator() {
 
     let monthlyPayment;
     let residualValue = 0;
-    
+
     if (values.loanType === 'balloon') {
       residualValue = values.purchasePrice * (values.residualPercent / 100);
       // Balloon payment formula
@@ -103,7 +103,7 @@ export default function FinanceCalculator() {
       row.interest.toFixed(2),
       row.balance.toFixed(2)
     ]);
-    
+
     const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -119,7 +119,7 @@ export default function FinanceCalculator() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-950">
       {/* Header */}
       <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -140,8 +140,8 @@ export default function FinanceCalculator() {
           <div className="lg:w-[420px] flex-shrink-0">
             <div className="sticky top-24">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-slate-900">Parameters</h2>
-                <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-500">
+                <h2 className="text-lg font-semibold text-white">Parameters</h2>
+                <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
                   <RefreshCw className="w-4 h-4 mr-1" />
                   Reset
                 </Button>
@@ -155,12 +155,12 @@ export default function FinanceCalculator() {
             <div className="flex items-center justify-between mb-6">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex items-center justify-between mb-6">
-                  <TabsList className="bg-slate-100">
-                    <TabsTrigger value="summary" className="flex items-center gap-2">
+                  <TabsList className="bg-slate-800 border border-slate-700">
+                    <TabsTrigger value="summary" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
                       <BarChart3 className="w-4 h-4" />
                       Summary
                     </TabsTrigger>
-                    <TabsTrigger value="schedule" className="flex items-center gap-2">
+                    <TabsTrigger value="schedule" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
                       <FileText className="w-4 h-4" />
                       Schedule
                     </TabsTrigger>
@@ -168,7 +168,7 @@ export default function FinanceCalculator() {
 
                   <Button
                     onClick={handleExportPDF}
-                    className="bg-slate-900 hover:bg-slate-800 text-white"
+                    className="bg-sky-600 hover:bg-sky-700 text-white"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export PDF
@@ -189,8 +189,8 @@ export default function FinanceCalculator() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >
-                    <AmortizationTable 
-                      schedule={calculations.schedule} 
+                    <AmortizationTable
+                      schedule={calculations.schedule}
                       onExport={handleExportCSV}
                     />
                   </motion.div>
