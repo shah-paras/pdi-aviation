@@ -44,7 +44,7 @@ export default function AboutUs() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-950">
       {/* Hero */}
       <section className="relative py-20 lg:py-28 overflow-hidden">
         <div 
@@ -80,7 +80,7 @@ export default function AboutUs() {
       </section>
 
       {/* Stats */}
-      <section className="py-12 bg-white border-y border-slate-200">
+      <section className="py-12 bg-slate-900 border-y border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
@@ -97,8 +97,8 @@ export default function AboutUs() {
                 transition={{ delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="text-3xl lg:text-4xl font-bold text-blue-600">{stat.value}</div>
-                <div className="text-slate-600 text-sm mt-1">{stat.label}</div>
+                <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">{stat.value}</div>
+                <div className="text-slate-400 text-sm mt-1">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -106,7 +106,7 @@ export default function AboutUs() {
       </section>
 
       {/* Mission */}
-      <section className="py-20 lg:py-28">
+      <section className="py-20 lg:py-28 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <motion.div
@@ -114,19 +114,19 @@ export default function AboutUs() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <div className="flex items-center gap-2 text-blue-600 text-sm font-medium mb-3">
+              <div className="flex items-center gap-2 text-sky-400 text-sm font-medium mb-3">
                 <Target className="w-4 h-4" />
                 Our Mission
               </div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6">
+              <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
                 Simplifying Aircraft Ownership in India
               </h2>
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                We believe that aircraft acquisition should be transparent, efficient, and 
-                tailored to each client's unique requirements. Our mission is to demystify 
+              <p className="text-lg text-slate-300 mb-8 leading-relaxed">
+                We believe that aircraft acquisition should be transparent, efficient, and
+                tailored to each client's unique requirements. Our mission is to demystify
                 the process and provide world-class advisory services that rival global standards.
               </p>
-              
+
               <div className="grid sm:grid-cols-2 gap-4">
                 {[
                   { icon: Shield, title: 'Independent Advice', desc: 'Unbiased recommendations' },
@@ -135,12 +135,12 @@ export default function AboutUs() {
                   { icon: Globe, title: 'Global Network', desc: 'International connections' }
                 ].map((item, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-                      <item.icon className="w-5 h-5 text-blue-600" />
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                      <item.icon className="w-5 h-5 text-sky-400" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-slate-900">{item.title}</h4>
-                      <p className="text-sm text-slate-600">{item.desc}</p>
+                      <h4 className="font-medium text-white">{item.title}</h4>
+                      <p className="text-sm text-slate-300">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -158,6 +158,7 @@ export default function AboutUs() {
                   src="https://images.unsplash.com/photo-1474302770737-173ee21bab63?auto=format&fit=crop&w=1000&q=80"
                   alt="Private jet"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
             </motion.div>
@@ -166,7 +167,7 @@ export default function AboutUs() {
       </section>
 
       {/* Timeline */}
-      <section className="py-20 lg:py-28 bg-blue-900 text-white">
+      <section className="py-20 lg:py-28 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -182,8 +183,8 @@ export default function AboutUs() {
           </motion.div>
 
           <div className="relative">
-            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-blue-700 hidden lg:block" />
-            
+            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-700 hidden lg:block" />
+
             <div className="space-y-8 lg:space-y-0">
               {MILESTONES.map((milestone, index) => (
                 <motion.div
@@ -195,13 +196,13 @@ export default function AboutUs() {
                   className={`lg:flex lg:items-center lg:gap-8 ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}
                 >
                   <div className={`lg:w-1/2 ${index % 2 === 0 ? 'lg:text-right lg:pr-12' : 'lg:text-left lg:pl-12'}`}>
-                    <div className="bg-blue-800 rounded-xl p-5 inline-block">
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 inline-block">
                       <div className="text-sky-400 font-bold text-xl mb-1">{milestone.year}</div>
                       <div className="text-white font-semibold">{milestone.title}</div>
                       <div className="text-slate-400 text-sm">{milestone.desc}</div>
                     </div>
                   </div>
-                  <div className="hidden lg:flex w-4 h-4 rounded-full bg-blue-500 relative z-10" />
+                  <div className="hidden lg:flex w-4 h-4 rounded-full bg-sky-500 relative z-10" />
                   <div className="lg:w-1/2" />
                 </motion.div>
               ))}
@@ -211,7 +212,7 @@ export default function AboutUs() {
       </section>
 
       {/* Team */}
-      <section className="py-20 lg:py-28">
+      <section className="py-20 lg:py-28 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -219,14 +220,14 @@ export default function AboutUs() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <div className="flex items-center justify-center gap-2 text-blue-600 text-sm font-medium mb-3">
+            <div className="flex items-center justify-center gap-2 text-sky-400 text-sm font-medium mb-3">
               <Users className="w-4 h-4" />
               Our Team
             </div>
-            <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">
               Meet the Experts
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Our team combines decades of aviation industry experience with deep market knowledge
             </p>
           </motion.div>
@@ -236,7 +237,7 @@ export default function AboutUs() {
       </section>
 
       {/* Contact */}
-      <section ref={contactRef} id="contact" className="py-20 lg:py-28 bg-slate-100">
+      <section ref={contactRef} id="contact" className="py-20 lg:py-28 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
             <motion.div
@@ -244,44 +245,44 @@ export default function AboutUs() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <div className="flex items-center gap-2 text-blue-600 text-sm font-medium mb-3">
+              <div className="flex items-center gap-2 text-sky-400 text-sm font-medium mb-3">
                 <Phone className="w-4 h-4" />
                 Get in Touch
               </div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6">
+              <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
                 Let's Start a Conversation
               </h2>
-              <p className="text-lg text-slate-600 mb-8">
-                Whether you're looking to buy, sell, or simply explore your options, 
+              <p className="text-lg text-slate-300 mb-8">
+                Whether you're looking to buy, sell, or simply explore your options,
                 our team is ready to help you navigate the world of private aviation.
               </p>
 
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <MapPin className="w-6 h-6 text-sky-400" />
                   </div>
                   <div>
-                    <div className="font-medium text-slate-900">Head Office</div>
-                    <div className="text-slate-600">New Delhi, India</div>
+                    <div className="font-medium text-white">Head Office</div>
+                    <div className="text-slate-300">New Delhi, India</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-sky-400" />
                   </div>
                   <div>
-                    <div className="font-medium text-slate-900">Email</div>
-                    <div className="text-slate-600">contact@pdiaviation.com</div>
+                    <div className="font-medium text-white">Email</div>
+                    <div className="text-slate-300">contact@pdiaviation.com</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                    <Phone className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <Phone className="w-6 h-6 text-sky-400" />
                   </div>
                   <div>
-                    <div className="font-medium text-slate-900">Phone</div>
-                    <div className="text-slate-600">+91 11 4567 8900</div>
+                    <div className="font-medium text-white">Phone</div>
+                    <div className="text-slate-300">+91 11 4567 8900</div>
                   </div>
                 </div>
               </div>
@@ -292,7 +293,7 @@ export default function AboutUs() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 border border-slate-200">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl shadow-xl p-6 lg:p-8 border border-white/10">
                 <ContactForm />
               </div>
             </motion.div>

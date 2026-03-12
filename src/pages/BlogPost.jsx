@@ -43,7 +43,7 @@ export default function BlogPost() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
       </div>
     );
@@ -51,8 +51,8 @@ export default function BlogPost() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <h2 className="text-2xl font-bold text-slate-900 mb-4">Article not found</h2>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <h2 className="text-2xl font-bold text-white mb-4">Article not found</h2>
         <Link to={createPageUrl('Blog')}>
           <Button>
             <ArrowLeft className="w-4 h-4 mr-2" />
@@ -64,18 +64,18 @@ export default function BlogPost() {
   }
 
   const categoryColors = {
-    'Industry News': 'bg-blue-100 text-blue-800',
-    'Aircraft Reviews': 'bg-purple-100 text-purple-800',
-    'Market Analysis': 'bg-emerald-100 text-emerald-800',
-    'Buying Guide': 'bg-amber-100 text-amber-800',
-    'Ownership Tips': 'bg-rose-100 text-rose-800',
-    'Technology': 'bg-indigo-100 text-indigo-800'
+    'Industry News': 'bg-blue-500/20 text-blue-300',
+    'Aircraft Reviews': 'bg-purple-500/20 text-purple-300',
+    'Market Analysis': 'bg-emerald-500/20 text-emerald-300',
+    'Buying Guide': 'bg-amber-500/20 text-amber-300',
+    'Ownership Tips': 'bg-rose-500/20 text-rose-300',
+    'Technology': 'bg-indigo-500/20 text-indigo-300'
   };
 
 
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-950">
       {/* Hero */}
       <div className="relative h-[50vh] lg:h-[60vh] min-h-[400px]">
         <img
@@ -95,7 +95,7 @@ export default function BlogPost() {
               Back to Blog
             </Link>
             
-            <Badge className={`${categoryColors[post.category] || 'bg-slate-100 text-slate-800'} mb-4`}>
+            <Badge className={`${categoryColors[post.category] || 'bg-slate-500/20 text-slate-300'} mb-4`}>
               {post.category}
             </Badge>
             
@@ -141,16 +141,16 @@ export default function BlogPost() {
           {/* Article */}
           <article className="flex-1 min-w-0">
             <div 
-              className="prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-a:text-blue-600 prose-img:rounded-xl"
+              className="prose prose-lg prose-slate prose-invert max-w-none prose-headings:font-bold prose-a:text-sky-400 prose-img:rounded-xl"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
             {/* Tags */}
             {post.tags && post.tags.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-slate-200">
+              <div className="mt-8 pt-8 border-t border-slate-800">
                 <div className="flex flex-wrap gap-2">
                   {post.tags.map(tag => (
-                    <Badge key={tag} variant="outline" className="text-slate-600">
+                    <Badge key={tag} variant="outline" className="text-slate-300 border-slate-700">
                       #{tag}
                     </Badge>
                   ))}
@@ -159,9 +159,9 @@ export default function BlogPost() {
             )}
 
             {/* Share */}
-            <div className="mt-8 pt-8 border-t border-slate-200">
+            <div className="mt-8 pt-8 border-t border-slate-800">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-300 flex items-center gap-2">
                   <Share2 className="w-4 h-4" />
                   Share this article
                 </span>
@@ -187,7 +187,7 @@ export default function BlogPost() {
         {/* Related Posts */}
         {relatedPosts.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6">Related Articles</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Related Articles</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedPosts.map(related => (
                 <Link
@@ -195,7 +195,7 @@ export default function BlogPost() {
                   to={createPageUrl('BlogPost') + `?slug=${related.slug}`}
                   className="group"
                 >
-                  <div className="bg-white rounded-xl overflow-hidden border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all">
+                  <div className="bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden border border-white/10 hover:border-sky-500/40 hover:shadow-lg hover:shadow-sky-500/5 transition-all">
                     <div className="aspect-[16/10] overflow-hidden">
                       <img
                         src={related.featured_image || 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?auto=format&fit=crop&w=800&q=80'}
@@ -204,10 +204,10 @@ export default function BlogPost() {
                       />
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      <h3 className="font-semibold text-white group-hover:text-sky-400 transition-colors line-clamp-2">
                         {related.title}
                       </h3>
-                      <p className="text-sm text-slate-500 mt-2 flex items-center gap-1">
+                      <p className="text-sm text-slate-400 mt-2 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         {related.reading_time_min || 5} min read
                       </p>

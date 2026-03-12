@@ -7,12 +7,12 @@ import { motion } from 'framer-motion';
 
 export default function BlogCard({ post, featured = false }) {
   const categoryColors = {
-    'Industry News': 'bg-blue-100 text-blue-800',
-    'Aircraft Reviews': 'bg-purple-100 text-purple-800',
-    'Market Analysis': 'bg-emerald-100 text-emerald-800',
-    'Buying Guide': 'bg-amber-100 text-amber-800',
-    'Ownership Tips': 'bg-rose-100 text-rose-800',
-    'Technology': 'bg-indigo-100 text-indigo-800'
+    'Industry News': 'bg-blue-500/20 text-blue-300',
+    'Aircraft Reviews': 'bg-purple-500/20 text-purple-300',
+    'Market Analysis': 'bg-emerald-500/20 text-emerald-300',
+    'Buying Guide': 'bg-amber-500/20 text-amber-300',
+    'Ownership Tips': 'bg-rose-500/20 text-rose-300',
+    'Technology': 'bg-indigo-500/20 text-indigo-300'
   };
 
   if (featured) {
@@ -31,7 +31,7 @@ export default function BlogCard({ post, featured = false }) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
-              <Badge className={`${categoryColors[post.category] || 'bg-slate-100 text-slate-800'} mb-3`}>
+              <Badge className={`${categoryColors[post.category] || 'bg-slate-500/20 text-slate-300'} mb-3`}>
                 {post.category}
               </Badge>
               <h2 className="text-2xl lg:text-4xl font-bold text-white mb-3 group-hover:text-sky-300 transition-colors">
@@ -68,31 +68,32 @@ export default function BlogCard({ post, featured = false }) {
       className="group"
     >
       <Link to={createPageUrl('BlogPost') + `?slug=${post.slug}`}>
-        <div className="bg-white rounded-xl overflow-hidden border border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all">
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden border border-white/10 hover:border-sky-500/40 hover:shadow-xl hover:shadow-sky-500/5 transition-all">
           <div className="aspect-[16/9] overflow-hidden">
             <img
               src={post.featured_image || 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?auto=format&fit=crop&w=800&q=80'}
               alt={post.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              loading="lazy"
             />
           </div>
           <div className="p-5">
-            <Badge className={`${categoryColors[post.category] || 'bg-slate-100 text-slate-800'} mb-3`}>
+            <Badge className={`${categoryColors[post.category] || 'bg-slate-500/20 text-slate-300'} mb-3`}>
               {post.category}
             </Badge>
-            <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+            <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-sky-400 transition-colors line-clamp-2">
               {post.title}
             </h3>
-            <p className="text-slate-600 text-sm mb-4 line-clamp-2">
+            <p className="text-slate-300 text-sm mb-4 line-clamp-2">
               {post.excerpt}
             </p>
-            <div className="flex items-center justify-between text-xs text-slate-500">
+            <div className="flex items-center justify-between text-xs text-slate-400">
               <div className="flex items-center gap-2">
                 {post.author_avatar ? (
                   <img src={post.author_avatar} alt={post.author_name} className="w-6 h-6 rounded-full" />
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center">
-                    <User className="w-3 h-3 text-slate-500" />
+                  <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center">
+                    <User className="w-3 h-3 text-slate-400" />
                   </div>
                 )}
                 <span>{post.author_name}</span>

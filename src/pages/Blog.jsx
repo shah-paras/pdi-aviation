@@ -41,9 +41,9 @@ export default function Blog() {
   const remainingPosts = filteredPosts.slice(1);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white py-12 lg:py-16">
+      <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
             <BookOpen className="w-4 h-4" />
@@ -58,7 +58,7 @@ export default function Blog() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search & Filters */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 mb-8 shadow-sm">
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-4 mb-8">
           <div className="flex flex-col lg:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -77,9 +77,9 @@ export default function Blog() {
                   size="sm"
                   onClick={() => setSelectedCategory(category)}
                   className={`whitespace-nowrap ${
-                    selectedCategory === category 
-                      ? 'bg-slate-900 hover:bg-slate-800' 
-                      : ''
+                    selectedCategory === category
+                      ? 'bg-sky-500 hover:bg-sky-600 text-white border-sky-500'
+                      : 'border-slate-700 text-slate-300 hover:bg-white/5 hover:text-white'
                   }`}
                 >
                   {category}
@@ -95,9 +95,9 @@ export default function Blog() {
           </div>
         ) : filteredPosts.length === 0 ? (
           <div className="text-center py-20">
-            <BookOpen className="w-16 h-16 mx-auto text-slate-300 mb-4" />
-            <h3 className="text-lg font-medium text-slate-900 mb-2">No articles found</h3>
-            <p className="text-slate-500">Try adjusting your search or filter criteria</p>
+            <BookOpen className="w-16 h-16 mx-auto text-slate-600 mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No articles found</h3>
+            <p className="text-slate-400">Try adjusting your search or filter criteria</p>
           </div>
         ) : (
           <>

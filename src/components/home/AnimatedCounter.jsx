@@ -4,7 +4,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export default function AnimatedCounter({ value, prefix = '', suffix = '', className = '' }) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-50px' });
+  const isInView = useInView(ref, { once: true, margin: '0px' });
   const reduced = useReducedMotion();
   const motionValue = useMotionValue(0);
   const rounded = useTransform(motionValue, (v) => Math.round(v));

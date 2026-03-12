@@ -33,7 +33,7 @@ export function StaggerReveal({ children, className = '' }) {
       variants={containerVariants}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: '-50px' }}
+      viewport={{ once: true, margin: '0px' }}
     >
       {children}
     </motion.div>

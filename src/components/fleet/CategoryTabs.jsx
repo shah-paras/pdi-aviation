@@ -1,6 +1,9 @@
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export default function CategoryTabs({ tabs, activeTab, onTabChange }) {
+  const reduced = useReducedMotion();
+
   return (
     <div className="sticky top-16 z-30 bg-slate-950/80 backdrop-blur-md border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -23,11 +26,15 @@ export default function CategoryTabs({ tabs, activeTab, onTabChange }) {
                   }`}
                 >
                   {isActive && (
-                    <motion.div
-                      layoutId="activeCategory"
-                      className="absolute inset-0 bg-sky-500 rounded-full"
-                      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                    />
+                    reduced ? (
+                      <div className="absolute inset-0 bg-sky-500 rounded-full" />
+                    ) : (
+                      <motion.div
+                        layoutId="activeCategory"
+                        className="absolute inset-0 bg-sky-500 rounded-full"
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    )
                   )}
                   <span className="relative z-10">
                     {tab.label} ({tab.count})

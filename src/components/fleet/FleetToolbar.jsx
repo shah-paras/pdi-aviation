@@ -19,7 +19,7 @@ export default function FleetToolbar({ sortBy, onSortChange }) {
     <div className="flex items-center gap-2">
       <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
       <Select value={sortBy} onValueChange={onSortChange}>
-        <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 w-[160px]">
+        <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 flex-1 sm:flex-none sm:w-[160px]">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>

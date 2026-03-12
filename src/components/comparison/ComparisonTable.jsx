@@ -156,13 +156,13 @@ function EmptyState() {
       animate={{ opacity: 1, scale: 1 }}
       className="flex flex-col items-center justify-center py-24 px-6 text-center"
     >
-      <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mb-6">
-        <Plane className="w-10 h-10 text-slate-300" />
+      <div className="w-20 h-20 rounded-2xl bg-slate-800 flex items-center justify-center mb-6">
+        <Plane className="w-10 h-10 text-slate-500" />
       </div>
-      <h3 className="text-xl font-semibold text-slate-800 mb-2">
+      <h3 className="text-xl font-semibold text-white mb-2">
         No Aircraft Selected
       </h3>
-      <p className="text-slate-500 max-w-sm text-sm leading-relaxed">
+      <p className="text-slate-400 max-w-sm text-sm leading-relaxed">
         Select up to 3 aircraft from the panel on the left to see a detailed
         side-by-side comparison of their specifications.
       </p>
@@ -185,21 +185,22 @@ function AircraftHeader({ model, index }) {
           <img
             src={model.thumbnail_url}
             alt={`${model.manufacturer} ${model.model}`}
-            className="w-28 h-16 object-cover rounded-lg border border-slate-200 shadow-sm"
+            className="w-28 h-16 object-cover rounded-lg border border-white/10 shadow-sm"
+            loading="lazy"
           />
         ) : (
-          <div className="w-28 h-16 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center border border-slate-200">
+          <div className="w-28 h-16 bg-gradient-to-br from-slate-800 to-slate-700 rounded-lg flex items-center justify-center border border-white/10">
             <Plane className="w-7 h-7 text-slate-400" />
           </div>
         )}
         <div>
-          <div className="font-semibold text-slate-900 text-sm leading-tight">
+          <div className="font-semibold text-white text-sm leading-tight">
             {model.manufacturer}
           </div>
-          <div className="font-bold text-slate-900 text-base leading-tight">
+          <div className="font-bold text-white text-base leading-tight">
             {model.model}
           </div>
-          <span className="inline-block mt-1.5 px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+          <span className="inline-block mt-1.5 px-2.5 py-0.5 text-[11px] font-medium rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">
             {model.category}
           </span>
         </div>
@@ -214,11 +215,11 @@ function SectionHeading({ section, colCount }) {
     <tr>
       <td
         colSpan={colCount + 1}
-        className="px-4 pt-6 pb-2 bg-slate-50/60"
+        className="px-4 pt-6 pb-2 bg-slate-900/60"
       >
         <div className="flex items-center gap-2">
-          <Icon className="w-4 h-4 text-blue-600" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <Icon className="w-4 h-4 text-sky-400" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
             {section.title}
           </span>
         </div>
@@ -237,21 +238,21 @@ function SpecRow({ row, models, rowIndex }) {
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.02 * rowIndex }}
-      className="border-t border-slate-100 hover:bg-slate-50/50 transition-colors"
+      className="border-t border-white/5 hover:bg-white/5 transition-colors"
     >
-      <td className="px-4 py-3 text-sm text-slate-600 font-medium whitespace-nowrap">
+      <td className="px-4 py-3 text-sm text-slate-300 font-medium whitespace-nowrap">
         <div className="flex items-center gap-2">
-          <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+          <Icon className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
           {row.label}
         </div>
       </td>
       {models.map((model, i) => (
         <td key={model.id} className="px-4 py-3 text-sm text-center font-medium">
-          <span className={best[i] ? 'text-emerald-600 font-semibold' : 'text-slate-800'}>
+          <span className={best[i] ? 'text-emerald-400 font-semibold' : 'text-slate-200'}>
             {row.format(model[row.key])}
           </span>
           {best[i] && (
-            <Trophy className="inline-block w-3 h-3 ml-1 text-emerald-500 -mt-0.5" />
+            <Trophy className="inline-block w-3 h-3 ml-1 text-emerald-400 -mt-0.5" />
           )}
         </td>
       ))}
@@ -278,7 +279,7 @@ export default function ComparisonTable({ selectedAircraft, aircraft }) {
 
   if (models.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-sm overflow-hidden">
         <EmptyState />
       </div>
     );
@@ -288,12 +289,12 @@ export default function ComparisonTable({ selectedAircraft, aircraft }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+      className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-sm overflow-hidden"
     >
       {/* Sticky heading bar */}
-      <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
-        <BarChart3 className="w-4 h-4 text-slate-500" />
-        <span className="text-sm font-semibold text-slate-700">
+      <div className="px-5 py-3 bg-slate-900 border-b border-white/10 flex items-center gap-2">
+        <BarChart3 className="w-4 h-4 text-slate-400" />
+        <span className="text-sm font-semibold text-slate-300">
           Comparing {models.length} Aircraft
         </span>
       </div>
@@ -310,7 +311,7 @@ export default function ComparisonTable({ selectedAircraft, aircraft }) {
 
           {/* Aircraft header row */}
           <thead>
-            <tr className="border-b border-slate-200 bg-white">
+            <tr className="border-b border-white/10 bg-slate-900/50">
               <th className="px-4 py-5" />
               <AnimatePresence mode="popLayout">
                 {models.map((m, i) => (
@@ -320,7 +321,7 @@ export default function ComparisonTable({ selectedAircraft, aircraft }) {
             </tr>
           </thead>
 
-          {/* Spec sections — each section is its own <tbody> */}
+          {/* Spec sections -- each section is its own <tbody> */}
           {sections.map(section => {
             // Only show section if at least one row has data
             const hasData = section.rows.some(row =>

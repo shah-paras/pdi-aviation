@@ -66,12 +66,12 @@ export default function ContactForm() {
         animate={{ opacity: 1, scale: 1 }}
         className="text-center py-12"
       >
-        <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-8 h-8 text-emerald-600" />
+        <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+          <CheckCircle className="w-8 h-8 text-emerald-400" />
         </div>
-        <h3 className="text-xl font-semibold text-slate-900 mb-2">Message Sent!</h3>
-        <p className="text-slate-600 mb-6">Thank you for reaching out. We'll get back to you shortly.</p>
-        <Button onClick={() => setIsSuccess(false)} variant="outline">
+        <h3 className="text-xl font-semibold text-white mb-2">Message Sent!</h3>
+        <p className="text-slate-300 mb-6">Thank you for reaching out. We'll get back to you shortly.</p>
+        <Button onClick={() => setIsSuccess(false)} variant="outline" className="border-slate-700 text-slate-300 hover:bg-white/5">
           Send Another Message
         </Button>
       </motion.div>
@@ -82,7 +82,7 @@ export default function ContactForm() {
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <Label className="text-slate-700 mb-1.5 block">Name *</Label>
+          <Label className="text-slate-300 mb-1.5 block">Name *</Label>
           <Input
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
@@ -90,7 +90,7 @@ export default function ContactForm() {
           />
         </div>
         <div>
-          <Label className="text-slate-700 mb-1.5 block">Email *</Label>
+          <Label className="text-slate-300 mb-1.5 block">Email *</Label>
           <Input
             type="email"
             value={formData.email}
@@ -102,7 +102,7 @@ export default function ContactForm() {
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <Label className="text-slate-700 mb-1.5 block">Phone</Label>
+          <Label className="text-slate-300 mb-1.5 block">Phone</Label>
           <Input
             value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
@@ -110,7 +110,7 @@ export default function ContactForm() {
           />
         </div>
         <div>
-          <Label className="text-slate-700 mb-1.5 block">Company</Label>
+          <Label className="text-slate-300 mb-1.5 block">Company</Label>
           <Input
             value={formData.company}
             onChange={(e) => handleChange('company', e.target.value)}
@@ -120,7 +120,7 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <Label className="text-slate-700 mb-1.5 block">Inquiry Type</Label>
+        <Label className="text-slate-300 mb-1.5 block">Inquiry Type</Label>
         <Select value={formData.inquiry_type} onValueChange={(v) => handleChange('inquiry_type', v)}>
           <SelectTrigger>
             <SelectValue placeholder="Select inquiry type" />
@@ -134,7 +134,7 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <Label className="text-slate-700 mb-1.5 block">Message *</Label>
+        <Label className="text-slate-300 mb-1.5 block">Message *</Label>
         <Textarea
           value={formData.message}
           onChange={(e) => handleChange('message', e.target.value)}

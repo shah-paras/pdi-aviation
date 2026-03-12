@@ -135,7 +135,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 lg:py-28 bg-slate-50">
+      <section className="py-20 lg:py-28 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -143,10 +143,10 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
               Powerful Tools for Smart Decisions
             </h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Access comprehensive tools designed to simplify your aircraft acquisition journey
             </p>
           </motion.div>
@@ -162,18 +162,18 @@ export default function Home() {
               >
                 <Link
                   to={createPageUrl(feature.href)}
-                  className="block h-full p-6 bg-white rounded-2xl border border-slate-200 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-500/10 transition-all group"
+                  className="block h-full p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 hover:border-sky-500/30 hover:shadow-xl hover:shadow-sky-500/10 transition-all group"
                 >
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <feature.icon className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-sky-400 transition-colors">
                     {feature.title}
                   </h3>
-                  <p className="text-slate-600 text-sm leading-relaxed">
+                  <p className="text-slate-300 text-sm leading-relaxed">
                     {feature.description}
                   </p>
-                  <div className="mt-4 flex items-center gap-1 text-blue-600 text-sm font-medium">
+                  <div className="mt-4 flex items-center gap-1 text-sky-400 text-sm font-medium">
                     Explore
                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </div>
@@ -185,7 +185,7 @@ export default function Home() {
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-20 lg:py-28 bg-white">
+      <section className="py-20 lg:py-28 bg-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
             <motion.div
@@ -193,11 +193,11 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6">
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
                 Why Aviation Leaders Choose PDI
               </h2>
-              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
-                With over 15 years of experience in the Indian aviation market, we provide 
+              <p className="text-lg text-slate-300 mb-8 leading-relaxed">
+                With over 15 years of experience in the Indian aviation market, we provide
                 unparalleled expertise in aircraft acquisition, valuation, and market intelligence.
               </p>
 
@@ -209,12 +209,12 @@ export default function Home() {
                   { icon: Users, title: 'Industry Network', desc: 'Access to exclusive listings and global connections' }
                 ].map((item, i) => (
                   <div key={i} className="flex gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
-                      <item.icon className="w-6 h-6 text-blue-600" />
+                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                      <item.icon className="w-6 h-6 text-sky-400" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-900">{item.title}</h4>
-                      <p className="text-slate-600 text-sm">{item.desc}</p>
+                      <h4 className="font-semibold text-white">{item.title}</h4>
+                      <p className="text-slate-300 text-sm">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -228,20 +228,21 @@ export default function Home() {
               className="relative"
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
-                <img 
+                <img
                   src="https://images.unsplash.com/photo-1569629743817-70d8db6c323b?auto=format&fit=crop&w=1000&q=80"
                   alt="Private jet interior"
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
-              <div className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-4 border border-slate-100">
+              <div className="absolute -bottom-6 -left-6 bg-slate-900 rounded-xl shadow-xl p-4 border border-slate-800">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                     <Plane className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-slate-900">₹2,500Cr+</div>
-                    <div className="text-xs text-slate-500">Transactions Advised</div>
+                    <div className="text-2xl font-bold text-white">₹2,500Cr+</div>
+                    <div className="text-xs text-slate-400">Transactions Advised</div>
                   </div>
                 </div>
               </div>

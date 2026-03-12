@@ -16,7 +16,13 @@ export default function FloatingParticles({ count = 30 }) {
       canvas.height = canvas.offsetHeight;
     };
     resize();
-    window.addEventListener('resize', resize);
+
+    let resizeTimer;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 150);
+    };
+    window.addEventListener('resize', debouncedResize);
 
     const particles = Array.from({ length: count }, () => ({
       x: Math.random() * canvas.width,
@@ -46,7 +52,8 @@ export default function FloatingParticles({ count = 30 }) {
 
     return () => {
       cancelAnimationFrame(animId);
-      window.removeEventListener('resize', resize);
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', debouncedResize);
     };
   }, [count, reduced]);
 

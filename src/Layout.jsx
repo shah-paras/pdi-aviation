@@ -35,19 +35,19 @@ export default function Layout({ children }) {
   const isActive = (href) => location.pathname.includes(href);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-950">
       <style>{`
         :root {
-          --primary: #1E40AF;
-          --primary-light: #3B82F6;
-          --accent: #2563EB;
-          --accent-light: #60A5FA;
+          --nav-primary: #1E40AF;
+          --nav-primary-light: #3B82F6;
+          --nav-accent: #2563EB;
+          --nav-accent-light: #60A5FA;
         }
         .nav-gradient {
-          background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+          background: linear-gradient(135deg, var(--nav-primary) 0%, var(--nav-primary-light) 100%);
         }
         .accent-gradient {
-          background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+          background: linear-gradient(135deg, var(--nav-accent) 0%, var(--nav-accent-light) 100%);
         }
         .glass-effect {
           backdrop-filter: blur(12px);

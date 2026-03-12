@@ -1,31 +1,27 @@
 /**
- * Dark-themed card displaying a single NSOP operator and its fleet.
- * Glassmorphic style with expandable fleet section.
+ * Dark-themed card displaying a single NSOP operator.
+ * Compact card with fleet type summary and "View Fleet" button.
  */
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { memo } from 'react';
 import {
-  Building2,
   MapPin,
-  ChevronDown,
   Plane,
   Users,
   Shield,
   CalendarDays,
+  Eye,
 } from 'lucide-react';
-import RegistrationBadge from './RegistrationBadge';
 
-const typeLabel = { FW: 'Fixed Wing', RW: 'Rotary Wing', B: 'Balloon' };
 const typeBadgeClass = {
-  FW: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  RW: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  B: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  FW: 'bg-blue-500/20 text-blue-400',
+  RW: 'bg-emerald-500/20 text-emerald-400',
+  B: 'bg-amber-500/20 text-amber-400',
 };
 
-export default function OperatorCard({ operator }) {
-  const [expanded, setExpanded] = useState(false);
+const typeLabel = { FW: 'FW', RW: 'RW', B: 'B' };
 
+function OperatorCard({ operator, onViewFleet }) {
   if (!operator) return null;
 
   const fleet = operator.fleet || [];
@@ -36,6 +32,16 @@ export default function OperatorCard({ operator }) {
         day: 'numeric',
       })
     : 'N/A';
+
+  // Fleet type summary
+  const typeCounts = {};
+  const uniqueModels = new Set();
+  for (const a of fleet) {
+    typeCounts[a.type] = (typeCounts[a.type] || 0) + 1;
+    uniqueModels.add(a.model);
+  }
+
+  const modelNames = [...uniqueModels].slice(0, 2);
 
   return (
     <div
@@ -75,69 +81,46 @@ export default function OperatorCard({ operator }) {
         </div>
       </div>
 
-      {/* Expand toggle */}
+      {/* Fleet summary + View Fleet */}
       {fleet.length > 0 && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between px-4 py-3 border-t border-white/5 text-xs font-medium text-slate-400 hover:bg-white/5 transition-colors"
-        >
-          <span>
-            {expanded ? 'Hide' : 'Show'} Fleet ({fleet.length} aircraft)
-          </span>
-          <motion.span
-            animate={{ rotate: expanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="w-4 h-4" />
-          </motion.span>
-        </button>
+        <div className="px-4 pb-3 pt-0 space-y-2">
+          {/* Type badges */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {Object.entries(typeCounts).map(([type, count]) => (
+              <span
+                key={type}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                  typeBadgeClass[type] || 'bg-slate-500/20 text-slate-400'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                {count} {typeLabel[type] || type}
+              </span>
+            ))}
+          </div>
+
+          {/* Top model names */}
+          {modelNames.length > 0 && (
+            <p className="text-[10px] text-slate-500 truncate">
+              {modelNames.join(', ')}
+              {uniqueModels.size > 2 && ` +${uniqueModels.size - 2} more`}
+            </p>
+          )}
+        </div>
       )}
 
-      {/* Fleet details */}
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <div className="px-4 pb-3 space-y-2 border-t border-white/5 pt-3">
-              {fleet.map((aircraft, idx) => (
-                <div
-                  key={aircraft.registration || idx}
-                  className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg bg-white/5"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <RegistrationBadge
-                      registration={aircraft.registration}
-                      type={aircraft.type}
-                    />
-                    <span className="text-xs text-slate-300 font-medium truncate">
-                      {aircraft.model}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span
-                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
-                        typeBadgeClass[aircraft.type] ||
-                        'bg-slate-500/20 text-slate-400 border-slate-500/30'
-                      }`}
-                    >
-                      {aircraft.type}
-                    </span>
-                    <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-500">
-                      <Users className="w-3 h-3" />
-                      {aircraft.seatingCapacity}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* View Fleet button */}
+      {fleet.length > 0 && (
+        <button
+          onClick={() => onViewFleet?.(operator)}
+          className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 border-t border-white/5 text-xs font-medium text-sky-400 hover:bg-sky-500/10 transition-colors"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          View Fleet ({fleet.length} aircraft)
+        </button>
+      )}
     </div>
   );
 }
+
+export default memo(OperatorCard);
