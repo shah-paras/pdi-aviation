@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { motion } from 'framer-motion';
-import { 
-  Plane, BarChart3, Map, Calculator, BookOpen, 
+import {
+  Plane, BarChart3, Map, Calculator, BookOpen,
   ArrowRight, Shield, Clock, TrendingUp, Users
 } from 'lucide-react';
+import NumbersSection from '@/components/home/NumbersSection';
 
 const features = [
   {
@@ -35,13 +36,6 @@ const features = [
     href: 'Blog',
     color: 'from-amber-500 to-amber-600'
   }
-];
-
-const stats = [
-  { value: '50+', label: 'Aircraft Models' },
-  { value: '₹2,500Cr+', label: 'Transactions Advised' },
-  { value: '15+', label: 'Years Experience' },
-  { value: '200+', label: 'Happy Clients' }
 ];
 
 export default function Home() {
@@ -90,7 +84,7 @@ export default function Home() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                to={createPageUrl('AboutUs') + '?section=contact'}
+                to={createPageUrl('ContactSales')}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 border border-white/20 text-white rounded-xl font-semibold text-lg hover:bg-white/20 transition-all backdrop-blur-sm"
               >
                 Contact Sales
@@ -99,40 +93,9 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div 
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-          animate={{ y: [0, 10, 0] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-        >
-          <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center pt-2">
-            <div className="w-1 h-2 bg-white/50 rounded-full" />
-          </div>
-        </motion.div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-12 bg-slate-900 border-y border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="text-center"
-              >
-                <div className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">
-                  {stat.value}
-                </div>
-                <div className="text-slate-400 text-sm mt-1">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <NumbersSection />
 
       {/* Features Section */}
       <section className="py-20 lg:py-28 bg-slate-950">
@@ -197,7 +160,7 @@ export default function Home() {
                 Why Aviation Leaders Choose PDI
               </h2>
               <p className="text-lg text-slate-300 mb-8 leading-relaxed">
-                With over 15 years of experience in the Indian aviation market, we provide
+                With over 5 years of experience in the Indian aviation market, we provide
                 unparalleled expertise in aircraft acquisition, valuation, and market intelligence.
               </p>
 
@@ -241,8 +204,8 @@ export default function Home() {
                     <Plane className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-white">₹2,500Cr+</div>
-                    <div className="text-xs text-slate-400">Transactions Advised</div>
+                    <div className="text-2xl font-bold text-white">₹1,200Cr+</div>
+                    <div className="text-xs text-slate-400">Advisory Support</div>
                   </div>
                 </div>
               </div>
@@ -275,7 +238,7 @@ export default function Home() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                to={createPageUrl('AboutUs') + '?section=contact'}
+                to={createPageUrl('ContactSales')}
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 border border-white/20 text-white rounded-xl font-semibold hover:bg-white/20 transition-all"
               >
                 Talk to an Expert

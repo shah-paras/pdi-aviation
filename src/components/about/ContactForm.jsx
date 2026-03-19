@@ -37,7 +37,7 @@ export default function ContactForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email || !formData.message) {
+    if (!formData.name || !formData.email || !formData.phone || !formData.company || !formData.inquiry_type || !formData.message) {
       setError('Please fill in all required fields');
       return;
     }
@@ -45,18 +45,31 @@ export default function ContactForm() {
     setIsSubmitting(true);
     setError('');
 
-    console.log('Contact form submitted:', formData);
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_key: 'dcacc4a7-34e2-43fb-be04-f1f551a8a6dd',
+          subject: `New ${formData.inquiry_type} inquiry from ${formData.name}`,
+          from_name: 'PDI Aviation Website',
+          botcheck: '',
+          ...formData,
+        }),
+      });
 
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      inquiry_type: '',
-      message: ''
-    });
+      const result = await response.json();
+      if (result.success) {
+        setIsSuccess(true);
+        setFormData({ name: '', email: '', phone: '', company: '', inquiry_type: '', message: '' });
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSuccess) {
@@ -80,13 +93,15 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <input type="checkbox" name="botcheck" className="hidden" style={{ display: 'none' }} />
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
           <Label className="text-slate-300 mb-1.5 block">Name *</Label>
           <Input
             value={formData.name}
             onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="Your name"
+            placeholder="Your full name"
+            required
           />
         </div>
         <div>
@@ -95,33 +110,36 @@ export default function ContactForm() {
             type="email"
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
-            placeholder="your@email.com"
+            placeholder="you@company.com"
+            required
           />
         </div>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <Label className="text-slate-300 mb-1.5 block">Phone</Label>
+          <Label className="text-slate-300 mb-1.5 block">Phone *</Label>
           <Input
             value={formData.phone}
             onChange={(e) => handleChange('phone', e.target.value)}
-            placeholder="+91 98765 43210"
+            placeholder="+91 XXXXXXXXXX"
+            required
           />
         </div>
         <div>
-          <Label className="text-slate-300 mb-1.5 block">Company</Label>
+          <Label className="text-slate-300 mb-1.5 block">Company *</Label>
           <Input
             value={formData.company}
             onChange={(e) => handleChange('company', e.target.value)}
-            placeholder="Your company"
+            placeholder="Your company name"
+            required
           />
         </div>
       </div>
 
       <div>
-        <Label className="text-slate-300 mb-1.5 block">Inquiry Type</Label>
-        <Select value={formData.inquiry_type} onValueChange={(v) => handleChange('inquiry_type', v)}>
+        <Label className="text-slate-300 mb-1.5 block">Inquiry Type *</Label>
+        <Select value={formData.inquiry_type} onValueChange={(v) => handleChange('inquiry_type', v)} required>
           <SelectTrigger>
             <SelectValue placeholder="Select inquiry type" />
           </SelectTrigger>
@@ -140,6 +158,7 @@ export default function ContactForm() {
           onChange={(e) => handleChange('message', e.target.value)}
           placeholder="Tell us about your requirements..."
           rows={5}
+          required
         />
       </div>
 

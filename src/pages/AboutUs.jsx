@@ -1,20 +1,11 @@
 import { useEffect, useRef } from 'react';
 import {
-  Users, Target, Award, Globe,
+  Users, Target, Globe,
   Shield, TrendingUp, Clock, MapPin, Phone, Mail
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import TeamGrid from '@/components/about/TeamGrid';
 import ContactForm from '@/components/about/ContactForm';
-
-const MILESTONES = [
-  { year: '2008', title: 'Founded', desc: 'PDI Aviation established in New Delhi' },
-  { year: '2012', title: 'First ₹100Cr Deal', desc: 'Completed first major aircraft transaction' },
-  { year: '2016', title: 'Regional Expansion', desc: 'Opened offices in Mumbai and Bangalore' },
-  { year: '2020', title: 'Digital Platform', desc: 'Launched comprehensive online tools' },
-  { year: '2023', title: '₹2,500Cr+ Advised', desc: 'Milestone in total transaction value' },
-  { year: '2024', title: 'Pan-India Presence', desc: 'Serving clients across 20+ cities' }
-];
 
 const PRESS_LOGOS = [
   { name: 'Economic Times', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/The_Economic_Times_logo.svg/1200px-The_Economic_Times_logo.svg.png' },
@@ -24,10 +15,10 @@ const PRESS_LOGOS = [
 ];
 
 const DEFAULT_TEAM = [
-  { id: '1', name: 'Rajesh Kumar', role: 'Founder & CEO', bio: '25+ years in aviation, former airline executive' },
-  { id: '2', name: 'Priya Sharma', role: 'Chief Operating Officer', bio: 'Operations expert with global aviation experience' },
-  { id: '3', name: 'Vikram Singh', role: 'Head of Acquisitions', bio: 'Specialized in aircraft transactions and valuations' },
-  { id: '4', name: 'Ananya Patel', role: 'Director of Client Relations', bio: 'Dedicated to exceptional client experiences' }
+  { id: '1', name: 'Raj Goswami', role: 'Chief Executive Officer, Managing Director', bio: 'Leading PDI Aviation\'s strategic vision and growth in India\'s private aviation market' },
+  { id: '2', name: 'Jay Gyani', role: 'Chief Operating Officer, Director', bio: 'Overseeing day-to-day operations and driving operational excellence across all verticals' },
+  { id: '3', name: 'Paras Shah', role: 'Chief Technology Officer', bio: 'Building PDI Aviation\'s technology platform and digital tools for aircraft advisory' },
+  { id: '4', name: 'Harsh Panchal', role: 'Chief Sales Officer', bio: 'Driving client acquisition and managing key relationships across India\'s aviation sector' }
 ];
 
 export default function AboutUs() {
@@ -70,7 +61,7 @@ export default function AboutUs() {
                 India's Premier Aviation Advisory
               </h1>
               <p className="text-xl text-slate-300 leading-relaxed">
-                For over 15 years, PDI Aviation has been guiding businesses and individuals 
+                For over 5 years, PDI Aviation has been guiding businesses and individuals 
                 through every aspect of aircraft ownership — from selection and acquisition 
                 to operations and resale.
               </p>
@@ -84,7 +75,7 @@ export default function AboutUs() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { value: '15+', label: 'Years Experience' },
+              { value: '5+', label: 'Years Experience' },
               { value: '200+', label: 'Aircraft Transactions' },
               { value: '₹2,500Cr+', label: 'Total Value Advised' },
               { value: '50+', label: 'Active Clients' }
@@ -166,51 +157,6 @@ export default function AboutUs() {
         </div>
       </section>
 
-      {/* Timeline */}
-      <section className="py-20 lg:py-28 bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <div className="flex items-center justify-center gap-2 text-sky-400 text-sm mb-3">
-              <Award className="w-4 h-4" />
-              Our Journey
-            </div>
-            <h2 className="text-3xl lg:text-4xl font-bold">Milestones</h2>
-          </motion.div>
-
-          <div className="relative">
-            <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-700 hidden lg:block" />
-
-            <div className="space-y-8 lg:space-y-0">
-              {MILESTONES.map((milestone, index) => (
-                <motion.div
-                  key={milestone.year}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`lg:flex lg:items-center lg:gap-8 ${index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'}`}
-                >
-                  <div className={`lg:w-1/2 ${index % 2 === 0 ? 'lg:text-right lg:pr-12' : 'lg:text-left lg:pl-12'}`}>
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-5 inline-block">
-                      <div className="text-sky-400 font-bold text-xl mb-1">{milestone.year}</div>
-                      <div className="text-white font-semibold">{milestone.title}</div>
-                      <div className="text-slate-400 text-sm">{milestone.desc}</div>
-                    </div>
-                  </div>
-                  <div className="hidden lg:flex w-4 h-4 rounded-full bg-sky-500 relative z-10" />
-                  <div className="lg:w-1/2" />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Team */}
       <section className="py-20 lg:py-28 bg-slate-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -264,7 +210,7 @@ export default function AboutUs() {
                   </div>
                   <div>
                     <div className="font-medium text-white">Head Office</div>
-                    <div className="text-slate-300">New Delhi, India</div>
+                    <div className="text-slate-300">Mumbai, India</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -273,7 +219,7 @@ export default function AboutUs() {
                   </div>
                   <div>
                     <div className="font-medium text-white">Email</div>
-                    <div className="text-slate-300">contact@pdiaviation.com</div>
+                    <div className="text-slate-300">business@pdiaviation.co.in</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -282,7 +228,7 @@ export default function AboutUs() {
                   </div>
                   <div>
                     <div className="font-medium text-white">Phone</div>
-                    <div className="text-slate-300">+91 11 4567 8900</div>
+                    <div className="text-slate-300">+91 88791 26239</div>
                   </div>
                 </div>
               </div>

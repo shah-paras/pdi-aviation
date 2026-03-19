@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import {
-  Plane, Menu, X,
+  Menu, X,
   BarChart3, Map, Calculator, BookOpen, Users, Phone, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CurrencySwitcher from '@/components/CurrencySwitcher';
+
 
 export default function Layout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -36,29 +36,10 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <style>{`
-        :root {
-          --nav-primary: #1E40AF;
-          --nav-primary-light: #3B82F6;
-          --nav-accent: #2563EB;
-          --nav-accent-light: #60A5FA;
-        }
-        .nav-gradient {
-          background: linear-gradient(135deg, var(--nav-primary) 0%, var(--nav-primary-light) 100%);
-        }
-        .accent-gradient {
-          background: linear-gradient(135deg, var(--nav-accent) 0%, var(--nav-accent-light) 100%);
-        }
-        .glass-effect {
-          backdrop-filter: blur(12px);
-          background: rgba(30, 64, 175, 0.95);
-        }
-      `}</style>
-
       {/* Header */}
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? 'glass-effect shadow-xl' : 'nav-gradient'
+          scrolled ? 'bg-slate-950/80 backdrop-blur-xl shadow-xl shadow-black/20 border-b border-white/10' : 'bg-slate-950/95 backdrop-blur-sm'
         }`}
       >
         <div className="w-full px-4 sm:px-6">
@@ -68,9 +49,7 @@ export default function Layout({ children }) {
               to={createPageUrl('Home')} 
               className="flex items-center gap-3 group"
             >
-              <div className="w-8 h-8 lg:w-9 lg:h-9 rounded-lg accent-gradient flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
-                <Plane className="w-4 h-4 lg:w-5 lg:h-5 text-slate-900" />
-              </div>
+              <img src="/pdi-logo.png" alt="PDI Aviation" className="w-8 h-8 lg:w-9 lg:h-9 rounded-lg shadow-md group-hover:scale-105 transition-transform object-cover" />
               <span className="hidden sm:block text-lg lg:text-xl font-bold text-white tracking-tight">PDI Aviation</span>
             </Link>
 
@@ -91,12 +70,11 @@ export default function Layout({ children }) {
               ))}
             </nav>
 
-            {/* CTA Button + Currency */}
+            {/* CTA Button */}
             <div className="hidden lg:flex items-center gap-3">
-              <CurrencySwitcher />
               <Link
-                to={createPageUrl('AboutUs') + '?section=contact'}
-                className="px-4 py-2 accent-gradient text-slate-900 rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity shadow-md flex items-center gap-1.5"
+                to={createPageUrl('ContactSales')}
+                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-semibold text-sm transition-colors shadow-md flex items-center gap-1.5"
               >
                 <Phone className="w-4 h-4" />
                 Contact Sales
@@ -120,12 +98,9 @@ export default function Layout({ children }) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden border-t border-slate-700 glass-effect"
+              className="lg:hidden border-t border-white/10 bg-slate-950/95 backdrop-blur-xl"
             >
               <div className="px-4 py-4 space-y-2">
-                <div className="pb-2 mb-2 border-b border-slate-700">
-                  <CurrencySwitcher className="w-full" />
-                </div>
                 {navItems.map((item) => (
                   <Link
                     key={item.name}
@@ -141,8 +116,8 @@ export default function Layout({ children }) {
                   </Link>
                 ))}
                 <Link
-                  to={createPageUrl('AboutUs') + '?section=contact'}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 accent-gradient text-slate-900 rounded-lg font-semibold text-sm mt-4"
+                  to={createPageUrl('ContactSales')}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-sky-500 text-white rounded-lg font-semibold text-sm mt-4"
                 >
                   <Phone className="w-4 h-4" />
                   Contact Sales
@@ -159,15 +134,13 @@ export default function Layout({ children }) {
       </main>
 
       {/* Footer */}
-      <footer className="nav-gradient text-white mt-auto">
+      <footer className="bg-slate-900 border-t border-slate-800 text-white mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {/* Brand */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl accent-gradient flex items-center justify-center">
-                  <Plane className="w-5 h-5 text-slate-900" />
-                </div>
+                <img src="/pdi-logo.png" alt="PDI Aviation" className="w-10 h-10 rounded-xl object-cover" />
                 <div>
                   <span className="text-lg font-bold">PDI Aviation</span>
                   <span className="block text-xs text-slate-400">Planedekho India</span>
@@ -195,7 +168,7 @@ export default function Layout({ children }) {
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><Link to={createPageUrl('AboutUs')} className="hover:text-white transition-colors">About Us</Link></li>
                 <li><Link to={createPageUrl('Blog')} className="hover:text-white transition-colors">Blog</Link></li>
-                <li><Link to={createPageUrl('AboutUs') + '?section=contact'} className="hover:text-white transition-colors">Contact</Link></li>
+                <li><Link to={createPageUrl('ContactSales')} className="hover:text-white transition-colors">Contact</Link></li>
               </ul>
             </div>
 
@@ -206,8 +179,8 @@ export default function Layout({ children }) {
                 Ready to find your perfect aircraft?
               </p>
               <Link
-                to={createPageUrl('AboutUs') + '?section=contact'}
-                className="inline-flex items-center gap-2 px-4 py-2 accent-gradient text-slate-900 rounded-lg font-medium text-sm"
+                to={createPageUrl('ContactSales')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-medium text-sm transition-colors"
               >
                 <Phone className="w-4 h-4" />
                 Contact Sales
@@ -215,7 +188,7 @@ export default function Layout({ children }) {
             </div>
           </div>
 
-          <div className="border-t border-slate-700 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
+          <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
             <p>© {new Date().getFullYear()} PDI Aviation. All rights reserved.</p>
             <div className="flex gap-6">
               <span className="hover:text-white cursor-pointer transition-colors">Privacy Policy</span>

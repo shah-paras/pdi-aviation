@@ -21,12 +21,12 @@ export default function Blog() {
 
   const isLoading = false;
   const posts = [
-    { id: '1', title: 'Understanding Aircraft Valuations in 2024', slug: 'aircraft-valuations-2024', excerpt: 'A comprehensive guide to how aircraft values are determined in today\'s market.', category: 'Market Analysis', featured_image: null, publish_date: '2024-11-15', author_name: 'Rajesh Kumar', reading_time_min: 8 },
-    { id: '2', title: 'Top 5 Light Jets for Indian Operators', slug: 'top-light-jets-india', excerpt: 'Comparing the best light jet options for the Indian market.', category: 'Aircraft Reviews', featured_image: null, publish_date: '2024-10-28', author_name: 'Vikram Singh', reading_time_min: 6 },
-    { id: '3', title: 'DGCA Regulations Every Owner Should Know', slug: 'dgca-regulations-guide', excerpt: 'Essential regulatory knowledge for aircraft owners in India.', category: 'Buying Guide', featured_image: null, publish_date: '2024-10-10', author_name: 'Priya Sharma', reading_time_min: 10 },
-    { id: '4', title: 'The Rise of Sustainable Aviation Fuel', slug: 'sustainable-aviation-fuel', excerpt: 'How SAF is changing the future of private aviation.', category: 'Industry News', featured_image: null, publish_date: '2024-09-20', author_name: 'Ananya Patel', reading_time_min: 5 },
-    { id: '5', title: 'Pre-Purchase Inspection Checklist', slug: 'pre-purchase-inspection', excerpt: 'What to look for before buying a pre-owned aircraft.', category: 'Buying Guide', featured_image: null, publish_date: '2024-09-05', author_name: 'Vikram Singh', reading_time_min: 7 },
-    { id: '6', title: 'Charter vs Ownership: A Cost Analysis', slug: 'charter-vs-ownership', excerpt: 'Breaking down the true cost of aircraft ownership vs chartering.', category: 'Ownership Tips', featured_image: null, publish_date: '2024-08-18', author_name: 'Rajesh Kumar', reading_time_min: 9 },
+    { id: '3', title: 'DGCA Regulations Every Owner Should Know', slug: 'dgca-regulations-guide', excerpt: 'Navigating India\'s civil aviation regulatory framework is not optional — it is the foundation of safe, legal, and financially sound aircraft ownership.', category: 'Buying Guide', featured_image: '/images/blog/dgca-regulations-guide.jpg', publish_date: '2025-12-22', author_name: 'PDI Aviation', reading_time_min: 10 },
+    { id: '1', title: 'Understanding Aircraft Valuations in 2026', slug: 'aircraft-valuations-2026', excerpt: 'From evolving interest rates to shifting fleet demographics — how to read the market signals that determine what your aircraft is worth in 2026.', category: 'Market Analysis', featured_image: '/images/blog/aircraft-valuations-2026.jpg', publish_date: '2026-02-10', author_name: 'PDI Aviation', reading_time_min: 8 },
+    { id: '2', title: 'Top 5 Light Jets for Indian Operators in 2026', slug: 'top-light-jets-india-2026', excerpt: 'From the Phenom 300E to the Citation M2 Gen2 — the five light jets best suited for Indian operations in 2026.', category: 'Aircraft Reviews', featured_image: '/images/blog/top-light-jets-india.png', publish_date: '2026-01-18', author_name: 'PDI Aviation', reading_time_min: 7 },
+    { id: '4', title: 'The Rise of Sustainable Aviation Fuel in 2026', slug: 'sustainable-aviation-fuel', excerpt: 'SAF is no longer a future aspiration — it is a present reality reshaping the economics, regulation, and public perception of private aviation.', category: 'Industry News', featured_image: '/images/blog/sustainable-aviation-fuel.jpg', publish_date: '2025-12-05', author_name: 'PDI Aviation', reading_time_min: 5 },
+    { id: '5', title: 'eVTOL and Urban Air Mobility: What Indian Operators Need to Know', slug: 'evtol-urban-air-mobility', excerpt: 'Electric vertical takeoff and landing aircraft are moving from prototype to certification — here is what the emerging eVTOL landscape means for Indian private aviation.', category: 'Technology', featured_image: '/images/blog/evtol-urban-air-mobility.jpg', publish_date: '2025-11-20', author_name: 'PDI Aviation', reading_time_min: 7 },
+    { id: '6', title: 'Charter vs Ownership: A Cost Analysis', slug: 'charter-vs-ownership', excerpt: 'The decision between chartering and owning an aircraft is fundamentally a financial one — including the costs that sellers rarely discuss.', category: 'Ownership Tips', featured_image: '/images/blog/charter-vs-ownership.png', publish_date: '2025-11-08', author_name: 'PDI Aviation', reading_time_min: 9 },
   ];
 
   const filteredPosts = posts.filter(post => {
@@ -43,7 +43,7 @@ export default function Blog() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white py-12 lg:py-16">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
             <BookOpen className="w-4 h-4" />

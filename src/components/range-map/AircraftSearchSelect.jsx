@@ -53,8 +53,8 @@ export default function AircraftSearchSelect({ aircraft, value, onValueChange })
           aria-expanded={open}
           className={cn(
             'flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-sm',
-            'bg-blue-800 border-blue-700 text-white hover:bg-blue-800/80',
-            'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-blue-900',
+            'bg-slate-800/80 border-slate-700 text-white hover:bg-slate-800',
+            'focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 focus:ring-offset-slate-900',
           )}
         >
           <span className="truncate">

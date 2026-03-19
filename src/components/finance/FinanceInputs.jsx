@@ -1,22 +1,36 @@
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Percent, Fuel, Shield } from 'lucide-react';
+import { Percent, Fuel, Shield } from 'lucide-react';
 import { useCurrency } from '@/hooks/use-currency';
+import { getCurrencyMeta } from '@/lib/currency-config';
 
 export default function FinanceInputs({ values, onChange }) {
-  const { currencySymbol } = useCurrency();
+  const { currencySymbol, selectedCurrency } = useCurrency();
+  const meta = getCurrencyMeta(selectedCurrency);
+  const [rawInputs, setRawInputs] = useState({});
   const handleChange = (key, value) => {
     onChange({ ...values, [key]: value });
   };
 
   const formatCurrency = (num) => {
-    return new Intl.NumberFormat('en-US').format(num);
+    return new Intl.NumberFormat(meta.locale).format(num);
   };
 
   const parseCurrency = (str) => {
     return parseFloat(str.replace(/[^0-9.-]+/g, '')) || 0;
+  };
+
+  const handleCurrencyInput = (key, rawValue) => {
+    const filtered = rawValue.replace(/[^0-9.,-]/g, '');
+    setRawInputs(prev => ({ ...prev, [key]: filtered }));
+    handleChange(key, parseCurrency(filtered));
+  };
+
+  const clearRawInput = (key) => {
+    setRawInputs(prev => { const { [key]: _, ...rest } = prev; return rest; });
   };
 
   return (
@@ -24,22 +38,23 @@ export default function FinanceInputs({ values, onChange }) {
       {/* Purchase Price */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-5">
         <div className="flex items-center gap-2 mb-4">
-          <DollarSign className="w-5 h-5 text-sky-400" />
+          <span className="w-5 h-5 flex items-center justify-center text-sky-400 font-bold text-lg leading-none">{currencySymbol}</span>
           <h3 className="font-semibold text-white">Purchase Details</h3>
         </div>
 
         <div>
-          <Label className="text-sm text-slate-300 mb-1.5 block">Purchase Price (USD)</Label>
+          <Label className="text-sm text-slate-300 mb-1.5 block">Purchase Price ({selectedCurrency})</Label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
             <Input
               type="text"
-              value={formatCurrency(values.purchasePrice)}
-              onChange={(e) => handleChange('purchasePrice', parseCurrency(e.target.value))}
+              inputMode="decimal"
+              value={rawInputs.purchasePrice !== undefined ? rawInputs.purchasePrice : formatCurrency(values.purchasePrice)}
+              onChange={(e) => handleCurrencyInput('purchasePrice', e.target.value)}
+              onBlur={() => clearRawInput('purchasePrice')}
               className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
             />
           </div>
-          <p className="text-xs text-slate-500 mt-1">All inputs in USD. Outputs converted via header currency switcher.</p>
         </div>
       </div>
 
@@ -64,7 +79,7 @@ export default function FinanceInputs({ values, onChange }) {
               step={5}
             />
             <div className="text-xs text-slate-400 mt-1">
-              ${formatCurrency(values.purchasePrice * values.downPaymentPercent / 100)}
+              {currencySymbol}{formatCurrency(values.purchasePrice * values.downPaymentPercent / 100)}
             </div>
           </div>
 
@@ -83,14 +98,53 @@ export default function FinanceInputs({ values, onChange }) {
               </Select>
             </div>
             <div>
-              <Label className="text-sm text-slate-300 mb-1.5 block">Interest Rate (%)</Label>
-              <Input
-                type="number"
-                step="0.1"
-                value={values.interestRate}
-                onChange={(e) => handleChange('interestRate', parseFloat(e.target.value) || 0)}
-                className="bg-slate-900 border-slate-800 text-slate-200"
-              />
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Label className="text-sm text-slate-300">Interest Rate (%)</Label>
+                <div className="group relative">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-500 cursor-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-10">
+                    Aviation rates typically range 6–12%
+                  </div>
+                </div>
+              </div>
+              {(() => {
+                const raw = rawInputs.interestRate;
+                const val = raw !== undefined ? parseFloat(raw) : values.interestRate;
+                const isError = raw !== undefined && (isNaN(val) || val < 6 || val > 12);
+                return (
+                  <>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">%</span>
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        value={rawInputs.interestRate !== undefined ? rawInputs.interestRate : values.interestRate}
+                        onChange={(e) => {
+                          const filtered = e.target.value.replace(/[^0-9.]/g, '');
+                          setRawInputs(prev => ({ ...prev, interestRate: filtered }));
+                          const parsed = parseFloat(filtered);
+                          if (!isNaN(parsed) && parsed >= 6 && parsed <= 12) {
+                            handleChange('interestRate', parsed);
+                          }
+                        }}
+                        onBlur={() => {
+                          const r = rawInputs.interestRate;
+                          const v = parseFloat(r);
+                          if (r !== undefined) {
+                            if (isNaN(v) || v < 6) handleChange('interestRate', 6);
+                            else if (v > 12) handleChange('interestRate', 12);
+                          }
+                          setRawInputs(prev => { const { interestRate: _, ...rest } = prev; return rest; });
+                        }}
+                        className={`pl-7 bg-slate-900 text-slate-200 ${isError ? 'border-red-500 focus-visible:ring-red-500/30' : 'border-slate-800'}`}
+                      />
+                    </div>
+                    {isError && (
+                      <p className="text-xs text-red-400 mt-1">Must be between 6% and 12%</p>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -143,7 +197,7 @@ export default function FinanceInputs({ values, onChange }) {
             />
           </div>
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Fuel Cost ($/gal)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Fuel Cost ({currencySymbol}/gal)</Label>
             <Input
               type="number"
               step="0.1"
@@ -162,7 +216,7 @@ export default function FinanceInputs({ values, onChange }) {
             />
           </div>
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Maintenance Reserve ($/hr)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Maintenance Reserve ({currencySymbol}/hr)</Label>
             <Input
               type="number"
               value={values.maintenancePerHour}
@@ -182,49 +236,57 @@ export default function FinanceInputs({ values, onChange }) {
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Insurance ($/year)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Insurance ({currencySymbol}/year)</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
-                value={formatCurrency(values.insurancePerYear)}
-                onChange={(e) => handleChange('insurancePerYear', parseCurrency(e.target.value))}
+                inputMode="decimal"
+                value={rawInputs.insurancePerYear !== undefined ? rawInputs.insurancePerYear : formatCurrency(values.insurancePerYear)}
+                onChange={(e) => handleCurrencyInput('insurancePerYear', e.target.value)}
+                onBlur={() => clearRawInput('insurancePerYear')}
                 className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
               />
             </div>
           </div>
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Hangar ($/year)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Hangar ({currencySymbol}/year)</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
-                value={formatCurrency(values.hangarPerYear)}
-                onChange={(e) => handleChange('hangarPerYear', parseCurrency(e.target.value))}
+                inputMode="decimal"
+                value={rawInputs.hangarPerYear !== undefined ? rawInputs.hangarPerYear : formatCurrency(values.hangarPerYear)}
+                onChange={(e) => handleCurrencyInput('hangarPerYear', e.target.value)}
+                onBlur={() => clearRawInput('hangarPerYear')}
                 className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
               />
             </div>
           </div>
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Crew ($/year)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Crew ({currencySymbol}/year)</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
-                value={formatCurrency(values.crewPerYear)}
-                onChange={(e) => handleChange('crewPerYear', parseCurrency(e.target.value))}
+                inputMode="decimal"
+                value={rawInputs.crewPerYear !== undefined ? rawInputs.crewPerYear : formatCurrency(values.crewPerYear)}
+                onChange={(e) => handleCurrencyInput('crewPerYear', e.target.value)}
+                onBlur={() => clearRawInput('crewPerYear')}
                 className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
               />
             </div>
           </div>
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Management ($/year)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Management ({currencySymbol}/year)</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
               <Input
                 type="text"
-                value={formatCurrency(values.managementPerYear)}
-                onChange={(e) => handleChange('managementPerYear', parseCurrency(e.target.value))}
+                inputMode="decimal"
+                value={rawInputs.managementPerYear !== undefined ? rawInputs.managementPerYear : formatCurrency(values.managementPerYear)}
+                onChange={(e) => handleCurrencyInput('managementPerYear', e.target.value)}
+                onBlur={() => clearRawInput('managementPerYear')}
                 className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
               />
             </div>
