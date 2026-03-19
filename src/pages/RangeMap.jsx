@@ -1,42 +1,28 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  Map as MapIcon, Plane, MapPin, Download,
-  Loader2, Target, Ruler, Info, Layers
+  Map as MapIcon, Plane, MapPin, X,
+  Target, Ruler, Info, Layers
 } from 'lucide-react';
 import AircraftSearchSelect from '@/components/range-map/AircraftSearchSelect';
+import AirportSearchSelect from '@/components/range-map/AirportSearchSelect';
 import { motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { createCircleGeoJSON, nmToKm, calculateZoomForRadius } from '@/lib/utils/mapUtils';
 import aircraftModels from '@/data/aircraftModels';
 
-const MAJOR_AIRPORTS = [
-  { code: 'DEL', name: 'New Delhi (DEL)', lat: 28.5665, lng: 77.1031 },
-  { code: 'BOM', name: 'Mumbai (BOM)', lat: 19.0896, lng: 72.8656 },
-  { code: 'BLR', name: 'Bangalore (BLR)', lat: 13.1986, lng: 77.7066 },
-  { code: 'MAA', name: 'Chennai (MAA)', lat: 12.9941, lng: 80.1709 },
-  { code: 'HYD', name: 'Hyderabad (HYD)', lat: 17.2403, lng: 78.4294 },
-  { code: 'CCU', name: 'Kolkata (CCU)', lat: 22.6520, lng: 88.4463 },
-  { code: 'DXB', name: 'Dubai (DXB)', lat: 25.2532, lng: 55.3657 },
-  { code: 'SIN', name: 'Singapore (SIN)', lat: 1.3644, lng: 103.9915 },
-  { code: 'LHR', name: 'London (LHR)', lat: 51.4700, lng: -0.4543 },
-  { code: 'JFK', name: 'New York (JFK)', lat: 40.6413, lng: -73.7781 },
-];
-
 
 export default function RangeMap() {
-  const [origin, setOrigin] = useState(MAJOR_AIRPORTS[0]);
+  const [origin, setOrigin] = useState({ code: 'DEL', name: 'Indira Gandhi International Airport', lat: 28.5665, lng: 77.1031 });
   const [selectedAircraftId, setSelectedAircraftId] = useState('');
   const [rangePercentage, setRangePercentage] = useState(100);
   const [showRings, setShowRings] = useState([true, true, false]);
   const [mapStyle, setMapStyle] = useState('standard');
   const [destination, setDestination] = useState(null);
-  const [isExporting, setIsExporting] = useState(false);
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -89,15 +75,6 @@ export default function RangeMap() {
     ? distanceToDestination / selectedAircraft.cruise_speed_ktas
     : null;
 
-  const handleExport = async () => {
-    setIsExporting(true);
-    // Simulated export - in production would use html2canvas
-    setTimeout(() => {
-      alert('Map export functionality requires additional setup. In production, this would generate a PNG.');
-      setIsExporting(false);
-    }, 1000);
-  };
-
   // Initialize map
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -145,14 +122,11 @@ export default function RangeMap() {
       if (map.getSource(`circle-${i}`)) map.removeSource(`circle-${i}`);
     }
 
-    // Add origin marker
+    // Add origin marker with PDI logo
     const originEl = document.createElement('div');
     originEl.innerHTML = `
-      <div class="w-8 h-8 bg-red-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
-        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
+      <div class="w-10 h-10 rounded-full border-2 border-white shadow-lg overflow-hidden">
+        <img src="/pdi-logo.png" alt="PDI" class="w-full h-full object-cover" />
       </div>
     `;
     const originMarker = new mapboxgl.Marker({ element: originEl })
@@ -216,10 +190,10 @@ export default function RangeMap() {
   }, [origin, destination, rings, ringColors]);
 
   return (
-    <div className="min-h-screen bg-blue-950 flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-slate-950 flex flex-col lg:flex-row">
       {/* Left Control Panel */}
-      <div className="lg:w-96 bg-blue-900 border-r border-blue-800 flex-shrink-0 overflow-y-auto">
-        <div className="p-6 border-b border-blue-800">
+      <div className="lg:w-96 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800 flex-shrink-0 overflow-y-auto">
+        <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-2 text-sky-400 text-sm mb-2">
             <MapIcon className="w-4 h-4" />
             <span>Range Visualization</span>
@@ -237,18 +211,11 @@ export default function RangeMap() {
               <MapPin className="w-4 h-4 text-sky-400" />
               Origin Airport
             </Label>
-            <Select value={origin.code} onValueChange={(code) => setOrigin(MAJOR_AIRPORTS.find(a => a.code === code))}>
-              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MAJOR_AIRPORTS.map(airport => (
-                  <SelectItem key={airport.code} value={airport.code}>
-                    {airport.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AirportSearchSelect
+              value={origin}
+              onValueChange={setOrigin}
+              placeholder="Search origin airport..."
+            />
           </div>
 
           {/* Aircraft Selector */}
@@ -269,7 +236,7 @@ export default function RangeMap() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-blue-800/50 rounded-xl p-4 border border-blue-700"
+              className="bg-slate-800/50 rounded-xl p-4 border border-slate-700"
             >
               <div className="flex items-center gap-3 mb-3">
                 {selectedAircraft.thumbnail_url ? (
@@ -279,8 +246,8 @@ export default function RangeMap() {
                     className="w-16 h-10 object-cover rounded-lg"
                   />
                 ) : (
-                  <div className="w-16 h-10 bg-blue-700 rounded-lg flex items-center justify-center">
-                    <Plane className="w-6 h-6 text-blue-300" />
+                  <div className="w-16 h-10 bg-slate-700 rounded-lg flex items-center justify-center">
+                    <Plane className="w-6 h-6 text-sky-300" />
                   </div>
                 )}
                 <div>
@@ -289,11 +256,11 @@ export default function RangeMap() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="bg-blue-900/50 rounded-lg p-2">
+                <div className="bg-slate-900/50 rounded-lg p-2">
                   <div className="text-slate-400 text-xs">Max Range</div>
                   <div className="text-white font-medium">{selectedAircraft.max_range_nm?.toLocaleString()} nm</div>
                 </div>
-                <div className="bg-blue-900/50 rounded-lg p-2">
+                <div className="bg-slate-900/50 rounded-lg p-2">
                   <div className="text-slate-400 text-xs">Cruise Speed</div>
                   <div className="text-white font-medium">{selectedAircraft.cruise_speed_ktas} ktas</div>
                 </div>
@@ -331,7 +298,7 @@ export default function RangeMap() {
             </Label>
             <div className="space-y-3">
               {[
-                { label: '100% Range', color: 'bg-blue-400', index: 0 },
+                { label: '100% Range', color: 'bg-sky-400', index: 0 },
                 { label: '75% Range', color: 'bg-sky-400', index: 1 },
                 { label: '50% Range', color: 'bg-cyan-400', index: 2 }
               ].map(ring => (
@@ -361,7 +328,7 @@ export default function RangeMap() {
               Map Style
             </Label>
             <Select value={mapStyle} onValueChange={setMapStyle}>
-              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
+              <SelectTrigger className="w-full bg-slate-800/80 border-slate-700 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -377,19 +344,25 @@ export default function RangeMap() {
             <Label className="text-slate-300 text-sm font-medium mb-2 block">
               Destination (optional)
             </Label>
-            <Select value={destination?.code || ''} onValueChange={(code) => setDestination(MAJOR_AIRPORTS.find(a => a.code === code) || null)}>
-              <SelectTrigger className="w-full bg-blue-800 border-blue-700 text-white">
-                <SelectValue placeholder="Select destination" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={null}>Clear destination</SelectItem>
-                {MAJOR_AIRPORTS.filter(a => a.code !== origin.code).map(airport => (
-                  <SelectItem key={airport.code} value={airport.code}>
-                    {airport.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <AirportSearchSelect
+                  value={destination}
+                  onValueChange={setDestination}
+                  placeholder="Search destination..."
+                  excludeCode={origin?.code}
+                />
+              </div>
+              {destination && (
+                <button
+                  onClick={() => setDestination(null)}
+                  className="flex items-center justify-center w-10 h-10 rounded-md bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                  aria-label="Clear destination"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Distance Info */}
@@ -426,19 +399,6 @@ export default function RangeMap() {
             </motion.div>
           )}
 
-          {/* Export Button */}
-          <Button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isExporting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4 mr-2" />
-            )}
-            Export Map PNG
-          </Button>
         </div>
       </div>
 
@@ -449,6 +409,23 @@ export default function RangeMap() {
           className="w-full h-full"
           style={{ minHeight: '500px' }}
         />
+
+        {/* PDIAVIATION Watermark */}
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden z-10"
+          aria-hidden="true"
+        >
+          <span
+            className="text-white/[0.07] font-bold whitespace-nowrap"
+            style={{
+              fontSize: 'clamp(4rem, 12vw, 10rem)',
+              transform: 'rotate(-30deg)',
+              letterSpacing: '0.15em',
+            }}
+          >
+            PDIAVIATION
+          </span>
+        </div>
 
         {/* Map Legend */}
         <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg z-[1000]">

@@ -3,6 +3,7 @@ import Home from "./pages/Home";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import AboutUs from "./pages/AboutUs";
+import ContactSales from "./pages/ContactSales";
 import Layout from "./Layout.jsx";
 
 const AircraftComparison = lazy(() => import("./pages/AircraftComparison"));
@@ -21,6 +22,7 @@ export const PAGES = {
   Blog,
   BlogPost,
   AboutUs,
+  ContactSales,
 };
 
 export const pagesConfig = {

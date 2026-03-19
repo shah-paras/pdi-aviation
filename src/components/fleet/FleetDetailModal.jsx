@@ -1,7 +1,6 @@
 /**
  * FleetDetailModal — Dark-themed modal showing operator fleet details in a table.
  * Desktop: table layout | Mobile: stacked card list.
- * Includes currency integration for estimated aircraft values.
  */
 
 import {
@@ -21,8 +20,6 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import RegistrationBadge from '@/components/fleet/RegistrationBadge';
-import { useCurrency } from '@/hooks/use-currency';
-import { lookupAircraftModel, getEstimatedValue } from '@/lib/utils/aircraftLookup';
 import { MapPin, Shield, CalendarDays, Plane, Users } from 'lucide-react';
 
 const typeBadgeClass = {
@@ -32,8 +29,6 @@ const typeBadgeClass = {
 };
 
 export default function FleetDetailModal({ operator, open, onOpenChange }) {
-  const { formatPrice } = useCurrency();
-
   if (!operator) return null;
 
   const fleet = operator.fleet || [];
@@ -44,19 +39,6 @@ export default function FleetDetailModal({ operator, open, onOpenChange }) {
         day: 'numeric',
       })
     : 'N/A';
-
-  // Compute estimated values for fleet
-  const fleetWithValues = fleet.map((aircraft) => {
-    const value = getEstimatedValue(aircraft.modelId, aircraft.model);
-    const matchedModel = lookupAircraftModel(aircraft.modelId, aircraft.model);
-    return { ...aircraft, estimatedValue: value, matchedModel };
-  });
-
-  const totalValue = fleetWithValues.reduce(
-    (sum, a) => sum + (a.estimatedValue || 0),
-    0
-  );
-  const matchedCount = fleetWithValues.filter((a) => a.estimatedValue).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,11 +86,10 @@ export default function FleetDetailModal({ operator, open, onOpenChange }) {
                   <TableHead className="text-slate-400 text-xs h-9">Model</TableHead>
                   <TableHead className="text-slate-400 text-xs h-9">Type</TableHead>
                   <TableHead className="text-slate-400 text-xs h-9 text-center">Seats</TableHead>
-                  <TableHead className="text-slate-400 text-xs h-9 text-right pr-5">Est. Value</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {fleetWithValues.map((aircraft, idx) => (
+                {fleet.map((aircraft, idx) => (
                   <TableRow
                     key={aircraft.registration || idx}
                     className="border-slate-800/50 hover:bg-white/5"
@@ -138,11 +119,6 @@ export default function FleetDetailModal({ operator, open, onOpenChange }) {
                         {aircraft.seatingCapacity}
                       </span>
                     </TableCell>
-                    <TableCell className="py-2.5 text-right pr-5 text-xs text-slate-400">
-                      {aircraft.estimatedValue
-                        ? formatPrice(aircraft.estimatedValue)
-                        : 'N/A'}
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -151,7 +127,7 @@ export default function FleetDetailModal({ operator, open, onOpenChange }) {
 
           {/* Mobile card list — hidden on desktop */}
           <div className="sm:hidden px-4 py-3 space-y-2">
-            {fleetWithValues.map((aircraft, idx) => (
+            {fleet.map((aircraft, idx) => (
               <div
                 key={aircraft.registration || idx}
                 className="rounded-lg bg-white/5 p-3 space-y-2"
@@ -173,15 +149,10 @@ export default function FleetDetailModal({ operator, open, onOpenChange }) {
                 <div className="text-xs text-slate-300 font-medium">
                   {aircraft.model}
                 </div>
-                <div className="flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center text-xs text-slate-400">
                   <span className="inline-flex items-center gap-1">
                     <Users className="w-3 h-3" />
                     {aircraft.seatingCapacity} seats
-                  </span>
-                  <span>
-                    {aircraft.estimatedValue
-                      ? formatPrice(aircraft.estimatedValue)
-                      : 'N/A'}
                   </span>
                 </div>
               </div>
@@ -189,17 +160,6 @@ export default function FleetDetailModal({ operator, open, onOpenChange }) {
           </div>
         </ScrollArea>
 
-        {/* Footer */}
-        {matchedCount > 0 && (
-          <div className="px-5 py-3 border-t border-slate-800 flex items-center justify-between gap-2">
-            <p className="text-[10px] text-slate-500">
-              Estimates based on published OEM/market pricing ({matchedCount}/{fleet.length} matched)
-            </p>
-            <p className="text-xs font-semibold text-sky-400">
-              Fleet est. {formatPrice(totalValue)}
-            </p>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );

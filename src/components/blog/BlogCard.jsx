@@ -69,7 +69,7 @@ export default function BlogCard({ post, featured = false }) {
     >
       <Link to={createPageUrl('BlogPost') + `?slug=${post.slug}`}>
         <div className="bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden border border-white/10 hover:border-sky-500/40 hover:shadow-xl hover:shadow-sky-500/5 transition-all">
-          <div className="aspect-[16/9] overflow-hidden">
+          <div className="h-48 overflow-hidden">
             <img
               src={post.featured_image || 'https://images.unsplash.com/photo-1540962351504-03099e0a754b?auto=format&fit=crop&w=800&q=80'}
               alt={post.title}

@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Calculator, Download, RefreshCw, FileText, BarChart3 } from 'lucide-react';
+import { Calculator, Download, RefreshCw, FileText, BarChart3, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FinanceInputs from '@/components/finance/FinanceInputs';
 import FinanceResults from '@/components/finance/FinanceResults';
 import AmortizationTable from '@/components/finance/AmortizationTable';
+import CurrencySwitcher from '@/components/CurrencySwitcher';
 
 const defaultValues = {
   purchasePrice: 5000000,
@@ -27,6 +28,7 @@ const defaultValues = {
 export default function FinanceCalculator() {
   const [values, setValues] = useState(defaultValues);
   const [activeTab, setActiveTab] = useState('summary');
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   // Calculate loan and operating costs
   const calculations = useMemo(() => {
@@ -113,24 +115,100 @@ export default function FinanceCalculator() {
     a.click();
   };
 
-  const handleExportPDF = () => {
-    // In production, would use a PDF library
-    alert('PDF export requires additional setup. In production, this would generate a detailed PDF report.');
+  const handleExportPDF = async () => {
+    setPdfLoading(true);
+    try {
+      const { jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+      const fmt = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Title
+      doc.setFontSize(18);
+      doc.setTextColor(14, 165, 233); // sky-500
+      doc.text('PDI Aviation \u2014 Aircraft Finance Report', 14, 20);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated ${new Date().toLocaleDateString()}`, 14, 27);
+
+      // Loan Summary
+      autoTable(doc, {
+        startY: 35,
+        head: [['Loan Summary', 'Amount']],
+        body: [
+          ['Purchase Price', `$${fmt(values.purchasePrice)}`],
+          ['Down Payment', `$${fmt(calculations.downPayment)}`],
+          ['Loan Amount', `$${fmt(calculations.loanAmount)}`],
+          ['Monthly Payment', `$${fmt(calculations.monthlyPayment)}`],
+          ['Total Interest', `$${fmt(calculations.totalInterest)}`],
+          ['Total Loan Cost', `$${fmt(calculations.totalLoanCost)}`],
+          ...(values.loanType === 'balloon' ? [['Residual Value', `$${fmt(calculations.residualValue)}`]] : []),
+        ],
+        headStyles: { fillColor: [14, 165, 233], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      });
+
+      // Operating Cost Summary
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [['Operating Costs (Annual)', 'Amount']],
+        body: [
+          ['Fuel Cost', `$${fmt(calculations.annualFuelCost)}`],
+          ['Maintenance', `$${fmt(calculations.annualMaintenanceCost)}`],
+          ['Insurance', `$${fmt(values.insurancePerYear)}`],
+          ['Hangar', `$${fmt(values.hangarPerYear)}`],
+          ['Crew', `$${fmt(values.crewPerYear)}`],
+          ['Management', `$${fmt(values.managementPerYear)}`],
+          ['Total Annual Cost', `$${fmt(calculations.totalAnnualCost)}`],
+          ['Cost Per Flight Hour', `$${fmt(calculations.costPerHour)}`],
+        ],
+        headStyles: { fillColor: [14, 165, 233], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+      });
+
+      // Amortization Schedule
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 10,
+        head: [['Month', 'Payment', 'Principal', 'Interest', 'Balance']],
+        body: calculations.schedule.map(row => [
+          row.month,
+          `$${fmt(row.payment)}`,
+          `$${fmt(row.principal)}`,
+          `$${fmt(row.interest)}`,
+          `$${fmt(row.balance)}`,
+        ]),
+        headStyles: { fillColor: [14, 165, 233], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        styles: { fontSize: 8 },
+      });
+
+      doc.save('pdi-aviation-finance-report.pdf');
+    } catch (err) {
+      console.error('PDF export failed:', err);
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white py-12 lg:py-16">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
-            <Calculator className="w-4 h-4" />
-            <span>Finance Tools</span>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
+                <Calculator className="w-4 h-4" />
+                <span>Finance Tools</span>
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-bold mb-3">Aircraft Finance Calculator</h1>
+              <p className="text-slate-300 max-w-2xl">
+                Calculate acquisition costs, monthly payments, and total cost of ownership for your aircraft purchase.
+              </p>
+            </div>
+            <CurrencySwitcher />
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold mb-3">Aircraft Finance Calculator</h1>
-          <p className="text-slate-300 max-w-2xl">
-            Calculate acquisition costs, monthly payments, and total cost of ownership for your aircraft purchase.
-          </p>
         </div>
       </div>
 
@@ -168,9 +246,14 @@ export default function FinanceCalculator() {
 
                   <Button
                     onClick={handleExportPDF}
+                    disabled={pdfLoading}
                     className="bg-sky-600 hover:bg-sky-700 text-white"
                   >
-                    <Download className="w-4 h-4 mr-2" />
+                    {pdfLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
                     Export PDF
                   </Button>
                 </div>

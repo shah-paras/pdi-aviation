@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   BarChart3, Download, Save, Loader2,
-  Filter, RefreshCw
+  Filter, RefreshCw, FileText
 } from 'lucide-react';
 import {
   Dialog,
@@ -16,6 +16,7 @@ import { useSearchParams } from 'react-router-dom';
 import AircraftSelector from '@/components/comparison/AircraftSelector';
 import ComparisonTable from '@/components/comparison/ComparisonTable';
 import { useCurrency } from '@/hooks/use-currency';
+import CurrencySwitcher from '@/components/CurrencySwitcher';
 import aircraftModels from '@/data/aircraftModels';
 
 export default function AircraftComparison() {
@@ -98,6 +99,53 @@ export default function AircraftComparison() {
     setComparisonName('');
   };
 
+  const handleExportPDF = async () => {
+    const models = selectedAircraft.map(id => aircraft.find(a => a.id === id)).filter(Boolean);
+    if (models.length === 0) return;
+
+    const { jsPDF } = await import('jspdf');
+    const { default: autoTable } = await import('jspdf-autotable');
+
+    const doc = new jsPDF({ orientation: 'landscape' });
+
+    doc.setFontSize(18);
+    doc.setTextColor(14, 165, 233); // sky-500
+    doc.text('PDI Aviation — Aircraft Comparison', 14, 18);
+
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text(`Generated on ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, 25);
+
+    const head = [['Spec', ...models.map(m => `${m.manufacturer} ${m.model}`)]];
+    const body = [
+      ['Category', ...models.map(m => m.category || 'N/A')],
+      ['New Price (USD)', ...models.map(m => m.new_price_usd ? formatPrice(m.new_price_usd) : 'N/A')],
+      ['Pre-Owned Low (USD)', ...models.map(m => m.preowned_price_low_usd ? formatPrice(m.preowned_price_low_usd) : 'N/A')],
+      ['Pre-Owned High (USD)', ...models.map(m => m.preowned_price_high_usd ? formatPrice(m.preowned_price_high_usd) : 'N/A')],
+      ['Production Status', ...models.map(m => m.production_status || 'N/A')],
+      ['Max Range (nm)', ...models.map(m => m.max_range_nm || 'N/A')],
+      ['Cruise Speed (ktas)', ...models.map(m => m.cruise_speed_ktas || 'N/A')],
+      ['Max Passengers', ...models.map(m => m.max_pax || 'N/A')],
+      ['Engines', ...models.map(m => m.engines || 'N/A')],
+      ['Cabin Height (ft)', ...models.map(m => m.cabin_height_ft || 'N/A')],
+      ['Cabin Width (ft)', ...models.map(m => m.cabin_width_ft || 'N/A')],
+      ['Cabin Length (ft)', ...models.map(m => m.cabin_length_ft || 'N/A')],
+    ];
+
+    autoTable(doc, {
+      startY: 30,
+      head,
+      body,
+      theme: 'grid',
+      headStyles: { fillColor: [14, 165, 233], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      styles: { fontSize: 9, cellPadding: 3 },
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 } },
+    });
+
+    doc.save('aircraft-comparison.pdf');
+  };
+
   const handleExportCSV = () => {
     const models = selectedAircraft.map(id => aircraft.find(a => a.id === id)).filter(Boolean);
     if (models.length === 0) return;
@@ -133,16 +181,21 @@ export default function AircraftComparison() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
-      <div className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white py-12 lg:py-16">
+      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
-            <BarChart3 className="w-4 h-4" />
-            <span>Comparison Tool</span>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
+                <BarChart3 className="w-4 h-4" />
+                <span>Comparison Tool</span>
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-bold mb-3">Aircraft Comparison</h1>
+              <p className="text-slate-300 max-w-2xl">
+                Compare up to 3 aircraft side-by-side. Analyze specs, pricing, performance, and features to make informed decisions.
+              </p>
+            </div>
+            <CurrencySwitcher />
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold mb-3">Aircraft Comparison</h1>
-          <p className="text-slate-300 max-w-2xl">
-            Compare up to 3 aircraft side-by-side. Analyze specs, pricing, performance, and features to make informed decisions.
-          </p>
         </div>
       </div>
 
@@ -193,21 +246,12 @@ export default function AircraftComparison() {
               {/* Action Buttons */}
               <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-sm p-4 space-y-3">
                 <Button
-                  onClick={() => setSaveDialogOpen(true)}
+                  onClick={handleExportPDF}
                   disabled={activeSelections === 0}
                   className="w-full bg-sky-600 hover:bg-sky-700 text-white"
                 >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Comparison
-                </Button>
-                <Button
-                  onClick={handleExportCSV}
-                  disabled={activeSelections === 0}
-                  variant="outline"
-                  className="w-full border-slate-700 text-slate-300 hover:bg-white/5"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export CSV
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export PDF
                 </Button>
               </div>
             </div>
