@@ -6,6 +6,7 @@ import {
 import { motion } from 'framer-motion';
 import TeamGrid from '@/components/about/TeamGrid';
 import ContactForm from '@/components/about/ContactForm';
+import NumbersSection from '@/components/home/NumbersSection';
 
 const PRESS_LOGOS = [
   { name: 'Economic Times', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/The_Economic_Times_logo.svg/1200px-The_Economic_Times_logo.svg.png' },
@@ -71,30 +72,7 @@ export default function AboutUs() {
       </section>
 
       {/* Stats */}
-      <section className="py-12 bg-slate-900 border-y border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { value: '5+', label: 'Years Experience' },
-              { value: '200+', label: 'Aircraft Transactions' },
-              { value: '₹2,500Cr+', label: 'Total Value Advised' },
-              { value: '50+', label: 'Active Clients' }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="text-center"
-              >
-                <div className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent">{stat.value}</div>
-                <div className="text-slate-400 text-sm mt-1">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <NumbersSection />
 
       {/* Mission */}
       <section className="py-20 lg:py-28 bg-slate-950">
@@ -146,8 +124,8 @@ export default function AboutUs() {
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="https://images.unsplash.com/photo-1474302770737-173ee21bab63?auto=format&fit=crop&w=1000&q=80"
-                  alt="Private jet"
+                  src="/about-jet.jpeg"
+                  alt="PDI Aviation jet on runway"
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />

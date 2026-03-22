@@ -21,8 +21,14 @@ import aircraftModels from '@/data/aircraftModels';
 
 export default function AircraftComparison() {
   const { formatPrice } = useCurrency();
-  const [selectedCategories, setSelectedCategories] = useState(['', '', '']);
-  const [selectedAircraft, setSelectedAircraft] = useState(['', '', '']);
+  const [selectedCategories, setSelectedCategories] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pdi-comparison-categories')) || ['', '', '']; }
+    catch { return ['', '', '']; }
+  });
+  const [selectedAircraft, setSelectedAircraft] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pdi-comparison-aircraft')) || ['', '', '']; }
+    catch { return ['', '', '']; }
+  });
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [comparisonName, setComparisonName] = useState('');
   const [saving, setSaving] = useState(false);
@@ -37,6 +43,12 @@ export default function AircraftComparison() {
     ),
     []
   );
+
+  // Persist selections to localStorage
+  useEffect(() => {
+    localStorage.setItem('pdi-comparison-aircraft', JSON.stringify(selectedAircraft));
+    localStorage.setItem('pdi-comparison-categories', JSON.stringify(selectedCategories));
+  }, [selectedAircraft, selectedCategories]);
 
   // Pre-populate from URL params (e.g., ?ids=id1,id2,id3)
   useEffect(() => {

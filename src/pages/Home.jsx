@@ -5,7 +5,6 @@ import {
   Plane, BarChart3, Map, Calculator, BookOpen,
   ArrowRight, Shield, Clock, TrendingUp, Users
 } from 'lucide-react';
-import NumbersSection from '@/components/home/NumbersSection';
 
 const features = [
   {
@@ -46,7 +45,7 @@ export default function Home() {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1540962351504-03099e0a754b?auto=format&fit=crop&w=2000&q=80)'
+            backgroundImage: 'url(/home-jet.jpeg)'
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-slate-900/90 to-slate-800/80" />
@@ -94,8 +93,6 @@ export default function Home() {
         </div>
 
       </section>
-
-      <NumbersSection />
 
       {/* Features Section */}
       <section className="py-20 lg:py-28 bg-slate-950">
@@ -192,8 +189,8 @@ export default function Home() {
             >
               <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src="https://images.unsplash.com/photo-1569629743817-70d8db6c323b?auto=format&fit=crop&w=1000&q=80"
-                  alt="Private jet interior"
+                  src="/pdi-why-choose.png"
+                  alt="VT-PDI jet at Mumbai airport"
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />

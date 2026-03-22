@@ -30,7 +30,7 @@ export default function TeamGrid({ members }) {
             </div>
             <div className="p-5">
               <h3 className="font-semibold text-white text-lg">{member.name}</h3>
-              <p className="text-sky-400 text-sm font-medium mb-2">{member.role}</p>
+              <p className="text-sky-400 text-sm font-medium mb-2 min-h-[2.5rem]">{member.role}</p>
               {member.bio && (
                 <p className="text-slate-300 text-sm line-clamp-3">{member.bio}</p>
               )}
