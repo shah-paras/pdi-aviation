@@ -417,16 +417,15 @@ export default function RangeMap() {
   }, [origin, destination, rings, ringColors, effectiveRange, reducedMotion]);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col lg:flex-row">
+    <div className="h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)] bg-slate-950 flex flex-col lg:flex-row overflow-hidden">
       {/* Left Control Panel */}
-      <div className="lg:w-96 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800 flex-shrink-0 overflow-y-auto">
-        <div className="p-6 border-b border-slate-800">
-          <div className="flex items-center gap-2 text-sky-400 text-sm mb-2">
-            <MapIcon className="w-4 h-4" />
-            <span>Range Visualization</span>
+      <div className="lg:w-96 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800 flex-shrink-0 overflow-y-auto max-h-[40vh] lg:max-h-full">
+        <div className="p-4 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <MapIcon className="w-4 h-4 text-sky-400" />
+            <h1 className="text-lg font-semibold text-white">Range Map</h1>
           </div>
-          <h1 className="text-2xl font-bold text-white">Range Map</h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-500 text-xs mt-1 pl-[26px]">
             Visualize aircraft range from any origin
           </p>
         </div>
@@ -443,6 +442,32 @@ export default function RangeMap() {
               onValueChange={setOrigin}
               placeholder="Search origin airport..."
             />
+          </div>
+
+          {/* Destination */}
+          <div>
+            <Label className="text-slate-300 text-sm font-medium mb-2 block">
+              Destination (optional)
+            </Label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <AirportSearchSelect
+                  value={destination}
+                  onValueChange={setDestination}
+                  placeholder="Search destination..."
+                  excludeCode={origin?.code}
+                />
+              </div>
+              {destination && (
+                <button
+                  onClick={() => setDestination(null)}
+                  className="flex items-center justify-center w-10 h-10 rounded-md bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+                  aria-label="Clear destination"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Aircraft Selector */}
@@ -565,32 +590,6 @@ export default function RangeMap() {
             </Select>
           </div>
 
-          {/* Destination */}
-          <div>
-            <Label className="text-slate-300 text-sm font-medium mb-2 block">
-              Destination (optional)
-            </Label>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <AirportSearchSelect
-                  value={destination}
-                  onValueChange={setDestination}
-                  placeholder="Search destination..."
-                  excludeCode={origin?.code}
-                />
-              </div>
-              {destination && (
-                <button
-                  onClick={() => setDestination(null)}
-                  className="flex items-center justify-center w-10 h-10 rounded-md bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
-                  aria-label="Clear destination"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* Distance Info */}
           {distanceToDestination !== null && (
             <motion.div
@@ -629,11 +628,10 @@ export default function RangeMap() {
       </div>
 
       {/* Map Container */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden min-h-0">
         <div
           ref={mapContainerRef}
           className="w-full h-full"
-          style={{ minHeight: '500px' }}
         />
 
         {/* PDIAVIATION Watermark */}
@@ -654,25 +652,25 @@ export default function RangeMap() {
         </div>
 
         {/* Map Legend */}
-        <div className="absolute bottom-6 right-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg z-[1000]">
-          <div className="text-sm font-medium text-slate-900 mb-2">Range Legend</div>
+        <div className="absolute bottom-6 right-6 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-lg z-[1000]">
+          <div className="text-sm font-medium text-white mb-2">Range Legend</div>
           <div className="space-y-1.5">
             {showRings[0] && (
               <div className="flex items-center gap-2 text-xs">
                 <div className="w-4 h-0.5 bg-red-500" />
-                <span className="text-slate-600">100% ({effectiveRange.toLocaleString()} nm)</span>
+                <span className="text-slate-300">100% ({effectiveRange.toLocaleString()} nm)</span>
               </div>
             )}
             {showRings[1] && (
               <div className="flex items-center gap-2 text-xs">
                 <div className="w-4 h-0.5 border-t-2 border-dashed border-red-500" />
-                <span className="text-slate-600">50% ({Math.round(effectiveRange * 0.5).toLocaleString()} nm)</span>
+                <span className="text-slate-300">50% ({Math.round(effectiveRange * 0.5).toLocaleString()} nm)</span>
               </div>
             )}
             {destination && (
               <div className="flex items-center gap-2 text-xs">
                 <div className="w-4 h-0.5 border-t-2 border-dashed border-sky-400" />
-                <span className="text-slate-600">Flight Path</span>
+                <span className="text-slate-300">Flight Path</span>
               </div>
             )}
           </div>

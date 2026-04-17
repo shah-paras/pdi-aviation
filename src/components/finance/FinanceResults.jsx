@@ -53,9 +53,28 @@ export default function FinanceResults({ values, calculations }) {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Cost Analysis — key metrics at top */}
+      <div className="grid grid-cols-3 gap-3">
+        <Card className="p-3 text-center bg-white/5 backdrop-blur-sm border-white/10">
+          <p className="text-sm text-slate-400 mb-1">Cost Per Flight Hour</p>
+          <p className="text-xl font-bold text-white">{formatCurrency(costPerHour)}</p>
+          <Badge className="mt-2 bg-slate-700 text-slate-300">Variable + Fixed</Badge>
+        </Card>
+        <Card className="p-3 text-center bg-blue-500/10 border-blue-500/20">
+          <p className="text-sm text-slate-400 mb-1">5-Year Total Cost</p>
+          <p className="text-xl font-bold text-sky-400">{formatCurrency((totalAnnualCost + monthlyPayment * 12) * 5)}</p>
+          <Badge className="mt-2 bg-blue-500/20 text-blue-300">Ownership</Badge>
+        </Card>
+        <Card className="p-3 text-center bg-emerald-500/10 border-emerald-500/20">
+          <p className="text-sm text-slate-400 mb-1">Monthly Outflow</p>
+          <p className="text-xl font-bold text-emerald-400">{formatCurrency((totalAnnualCost / 12) + monthlyPayment)}</p>
+          <Badge className="mt-2 bg-emerald-500/20 text-emerald-300">Cash Flow</Badge>
+        </Card>
+      </div>
+
       {/* Summary Cards */}
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -78,111 +97,95 @@ export default function FinanceResults({ values, calculations }) {
         ))}
       </div>
 
-      {/* Loan Summary */}
-      <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
-        <div className="px-5 py-4 bg-slate-900 border-b border-white/10">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <PiggyBank className="w-5 h-5 text-sky-400" />
-            Loan Summary
-          </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Loan Summary */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-5 py-4 bg-slate-900 border-b border-white/10">
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <PiggyBank className="w-5 h-5 text-sky-400" />
+              Loan Summary
+            </h3>
+          </div>
+          <div className="p-5">
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Purchase Price</span>
+                <span className="font-medium text-white">{formatCurrency(values.purchasePrice)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Down Payment ({values.downPaymentPercent}%)</span>
+                <span className="font-medium text-white">{formatCurrency(values.purchasePrice * values.downPaymentPercent / 100)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Loan Amount</span>
+                <span className="font-medium text-white">{formatCurrency(loanAmount)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Interest Rate</span>
+                <span className="font-medium text-white">{values.interestRate}%</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Loan Term</span>
+                <span className="font-medium text-white">{values.loanTermYears} years ({values.loanTermYears * 12} months)</span>
+              </div>
+              <div className="flex justify-between py-2 bg-sky-500/10 -mx-5 px-5 rounded-lg">
+                <span className="font-semibold text-white">Total Loan Cost</span>
+                <span className="font-bold text-sky-400">{formatCurrency(totalLoanCost)}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="p-5">
-          <div className="space-y-3">
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Purchase Price</span>
-              <span className="font-medium text-white">{formatCurrency(values.purchasePrice)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Down Payment ({values.downPaymentPercent}%)</span>
-              <span className="font-medium text-white">{formatCurrency(values.purchasePrice * values.downPaymentPercent / 100)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Loan Amount</span>
-              <span className="font-medium text-white">{formatCurrency(loanAmount)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Interest Rate</span>
-              <span className="font-medium text-white">{values.interestRate}%</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Loan Term</span>
-              <span className="font-medium text-white">{values.loanTermYears} years ({values.loanTermYears * 12} months)</span>
-            </div>
-            <div className="flex justify-between py-2 bg-sky-500/10 -mx-5 px-5 rounded-lg">
-              <span className="font-semibold text-white">Total Loan Cost</span>
-              <span className="font-bold text-sky-400">{formatCurrency(totalLoanCost)}</span>
+
+        {/* Operating Costs Breakdown */}
+        <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+          <div className="px-5 py-4 bg-slate-900 border-b border-white/10">
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-sky-400" />
+              Annual Operating Costs
+            </h3>
+          </div>
+          <div className="p-5">
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300 flex items-center gap-2">
+                  <Fuel className="w-4 h-4" />
+                  Fuel ({values.annualHours} hrs × {values.fuelBurnGPH} gal/hr × ${values.fuelCostPerGallon}/gal)
+                </span>
+                <span className="font-medium text-white">{formatCurrency(annualFuelCost)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Maintenance Reserve ({values.annualHours} hrs × ${values.maintenancePerHour}/hr)</span>
+                <span className="font-medium text-white">{formatCurrency(annualMaintenanceCost)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Insurance</span>
+                <span className="font-medium text-white">{formatCurrency(values.insurancePerYear)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Hangar</span>
+                <span className="font-medium text-white">{formatCurrency(values.hangarPerYear)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Crew</span>
+                <span className="font-medium text-white">{formatCurrency(values.crewPerYear)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Management</span>
+                <span className="font-medium text-white">{formatCurrency(values.managementPerYear)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Annual Loan Payments</span>
+                <span className="font-medium text-white">{formatCurrency(monthlyPayment * 12)}</span>
+              </div>
+              <div className="flex justify-between py-2 bg-sky-500/20 text-white -mx-5 px-5 rounded-lg">
+                <span className="font-semibold">Total Annual Cost</span>
+                <span className="font-bold">{formatCurrency(totalAnnualCost + monthlyPayment * 12)}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Operating Costs Breakdown */}
-      <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
-        <div className="px-5 py-4 bg-slate-900 border-b border-white/10">
-          <h3 className="font-semibold text-white flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-sky-400" />
-            Annual Operating Costs
-          </h3>
-        </div>
-        <div className="p-5">
-          <div className="space-y-3">
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300 flex items-center gap-2">
-                <Fuel className="w-4 h-4" />
-                Fuel ({values.annualHours} hrs × {values.fuelBurnGPH} gal/hr × ${values.fuelCostPerGallon}/gal)
-              </span>
-              <span className="font-medium text-white">{formatCurrency(annualFuelCost)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Maintenance Reserve ({values.annualHours} hrs × ${values.maintenancePerHour}/hr)</span>
-              <span className="font-medium text-white">{formatCurrency(annualMaintenanceCost)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Insurance</span>
-              <span className="font-medium text-white">{formatCurrency(values.insurancePerYear)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Hangar</span>
-              <span className="font-medium text-white">{formatCurrency(values.hangarPerYear)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Crew</span>
-              <span className="font-medium text-white">{formatCurrency(values.crewPerYear)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Management</span>
-              <span className="font-medium text-white">{formatCurrency(values.managementPerYear)}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b border-white/5">
-              <span className="text-slate-300">Annual Loan Payments</span>
-              <span className="font-medium text-white">{formatCurrency(monthlyPayment * 12)}</span>
-            </div>
-            <div className="flex justify-between py-2 bg-sky-500/20 text-white -mx-5 px-5 rounded-lg">
-              <span className="font-semibold">Total Annual Cost</span>
-              <span className="font-bold">{formatCurrency(totalAnnualCost + monthlyPayment * 12)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Cost Analysis */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Card className="p-4 text-center bg-white/5 backdrop-blur-sm border-white/10">
-          <p className="text-sm text-slate-400 mb-1">Cost Per Flight Hour</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(costPerHour)}</p>
-          <Badge className="mt-2 bg-slate-700 text-slate-300">Variable + Fixed</Badge>
-        </Card>
-        <Card className="p-4 text-center bg-blue-500/10 border-blue-500/20">
-          <p className="text-sm text-slate-400 mb-1">5-Year Total Cost</p>
-          <p className="text-xl font-bold text-sky-400">{formatCurrency((totalAnnualCost + monthlyPayment * 12) * 5)}</p>
-          <Badge className="mt-2 bg-blue-500/20 text-blue-300">Ownership</Badge>
-        </Card>
-        <Card className="p-4 text-center bg-emerald-500/10 border-emerald-500/20">
-          <p className="text-sm text-slate-400 mb-1">Monthly Outflow</p>
-          <p className="text-xl font-bold text-emerald-400">{formatCurrency((totalAnnualCost / 12) + monthlyPayment)}</p>
-          <Badge className="mt-2 bg-emerald-500/20 text-emerald-300">Cash Flow</Badge>
-        </Card>
-      </div>
     </div>
   );
 }

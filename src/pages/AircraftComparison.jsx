@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   BarChart3, Download, Save, Loader2,
-  Filter, RefreshCw, FileText
+  RefreshCw, FileText
 } from 'lucide-react';
 import {
   Dialog,
@@ -20,7 +20,7 @@ import CurrencySwitcher from '@/components/CurrencySwitcher';
 import aircraftModels from '@/data/aircraftModels';
 
 export default function AircraftComparison() {
-  const { formatPrice } = useCurrency();
+  const { formatPrice, formatNumber, currencySymbol, convertAmount } = useCurrency();
   const [selectedCategories, setSelectedCategories] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pdi-comparison-categories')) || ['', '', '']; }
     catch { return ['', '', '']; }
@@ -131,9 +131,9 @@ export default function AircraftComparison() {
     const head = [['Spec', ...models.map(m => `${m.manufacturer} ${m.model}`)]];
     const body = [
       ['Category', ...models.map(m => m.category || 'N/A')],
-      ['New Price (USD)', ...models.map(m => m.new_price_usd ? formatPrice(m.new_price_usd) : 'N/A')],
-      ['Pre-Owned Low (USD)', ...models.map(m => m.preowned_price_low_usd ? formatPrice(m.preowned_price_low_usd) : 'N/A')],
-      ['Pre-Owned High (USD)', ...models.map(m => m.preowned_price_high_usd ? formatPrice(m.preowned_price_high_usd) : 'N/A')],
+      [`New Price (${selectedCurrency})`, ...models.map(m => m.new_price_usd ? formatNumber(m.new_price_usd) : 'N/A')],
+      [`Pre-Owned Low (${selectedCurrency})`, ...models.map(m => m.preowned_price_low_usd ? formatNumber(m.preowned_price_low_usd) : 'N/A')],
+      [`Pre-Owned High (${selectedCurrency})`, ...models.map(m => m.preowned_price_high_usd ? formatNumber(m.preowned_price_high_usd) : 'N/A')],
       ['Production Status', ...models.map(m => m.production_status || 'N/A')],
       ['Max Range (nm)', ...models.map(m => m.max_range_nm || 'N/A')],
       ['Cruise Speed (ktas)', ...models.map(m => m.cruise_speed_ktas || 'N/A')],
@@ -165,9 +165,9 @@ export default function AircraftComparison() {
     const headers = ['Spec', ...models.map(m => `${m.manufacturer} ${m.model}`)];
     const specs = [
       ['Category', ...models.map(m => m.category)],
-      ['New Price (USD)', ...models.map(m => m.new_price_usd ? formatPrice(m.new_price_usd) : 'N/A')],
-      ['Pre-Owned Low (USD)', ...models.map(m => m.preowned_price_low_usd ? formatPrice(m.preowned_price_low_usd) : 'N/A')],
-      ['Pre-Owned High (USD)', ...models.map(m => m.preowned_price_high_usd ? formatPrice(m.preowned_price_high_usd) : 'N/A')],
+      [`New Price (${selectedCurrency})`, ...models.map(m => m.new_price_usd ? convertAmount(m.new_price_usd).toFixed(0) : 'N/A')],
+      [`Pre-Owned Low (${selectedCurrency})`, ...models.map(m => m.preowned_price_low_usd ? convertAmount(m.preowned_price_low_usd).toFixed(0) : 'N/A')],
+      [`Pre-Owned High (${selectedCurrency})`, ...models.map(m => m.preowned_price_high_usd ? convertAmount(m.preowned_price_high_usd).toFixed(0) : 'N/A')],
       ['Production Status', ...models.map(m => m.production_status || 'N/A')],
       ['Max Range (nm)', ...models.map(m => m.max_range_nm || 'N/A')],
       ['Cruise Speed (ktas)', ...models.map(m => m.cruise_speed_ktas || 'N/A')],
@@ -191,91 +191,74 @@ export default function AircraftComparison() {
   const activeSelections = selectedAircraft.filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)] bg-slate-950 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
-                <BarChart3 className="w-4 h-4" />
-                <span>Comparison Tool</span>
+      <div className="bg-slate-950 border-b border-slate-800 text-white py-3 flex-shrink-0">
+        <div className="px-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-sky-400" />
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold mb-3">Aircraft Comparison</h1>
-              <p className="text-slate-300 max-w-2xl">
-                Compare up to 3 aircraft side-by-side. Analyze specs, pricing, performance, and features to make informed decisions.
-              </p>
+              <div>
+                <h1 className="text-lg font-semibold leading-tight">Aircraft Comparison</h1>
+                <p className="text-xs text-slate-500 hidden sm:block">Compare up to 3 aircraft side-by-side</p>
+              </div>
             </div>
-            <CurrencySwitcher />
+            <div className="flex items-center gap-3">
+              {activeSelections > 0 && (
+                <button
+                  onClick={handleClearAll}
+                  className="text-xs text-slate-400 hover:text-slate-300 flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/5"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Clear All
+                </button>
+              )}
+              <Button
+                onClick={handleExportPDF}
+                disabled={activeSelections === 0}
+                size="sm"
+                className="bg-sky-600 hover:bg-sky-700 text-white"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Export PDF
+              </Button>
+              <CurrencySwitcher />
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Panel - Selectors */}
-          <div className="lg:w-80 flex-shrink-0">
-            <div className="sticky top-24 space-y-4">
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-sm overflow-hidden">
-                <div className="p-4 bg-slate-900 border-b border-white/10 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-slate-400" />
-                    <span className="font-semibold text-white">Select Aircraft</span>
-                  </div>
-                  {activeSelections > 0 && (
-                    <button
-                      onClick={handleClearAll}
-                      className="text-xs text-slate-400 hover:text-slate-300 flex items-center gap-1"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      Clear All
-                    </button>
-                  )}
-                </div>
-                
-                <div className="p-4 space-y-4">
-                  {isLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
-                    </div>
-                  ) : (
-                    [0, 1, 2].map(index => (
-                      <AircraftSelector
-                        key={index}
-                        index={index}
-                        selectedCategory={selectedCategories[index]}
-                        selectedAircraft={selectedAircraft[index]}
-                        aircraft={aircraft}
-                        onCategoryChange={(value) => handleCategoryChange(index, value)}
-                        onAircraftChange={(value) => handleAircraftChange(index, value)}
-                        onClear={() => handleClear(index)}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-sm p-4 space-y-3">
-                <Button
-                  onClick={handleExportPDF}
-                  disabled={activeSelections === 0}
-                  className="w-full bg-sky-600 hover:bg-sky-700 text-white"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
-              </div>
+      <div className="px-6 py-3 flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+        {/* Selector strip — horizontal 3-col grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+          {isLoading ? (
+            <div className="col-span-full flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
-          </div>
+          ) : (
+            [0, 1, 2].map(index => (
+              <AircraftSelector
+                key={index}
+                index={index}
+                selectedCategory={selectedCategories[index]}
+                selectedAircraft={selectedAircraft[index]}
+                aircraft={aircraft}
+                onCategoryChange={(value) => handleCategoryChange(index, value)}
+                onAircraftChange={(value) => handleAircraftChange(index, value)}
+                onClear={() => handleClear(index)}
+              />
+            ))
+          )}
+        </div>
 
-          {/* Right Panel - Comparison Table */}
-          <div className="flex-1 min-w-0">
-            <ComparisonTable 
-              selectedAircraft={selectedAircraft}
-              aircraft={aircraft}
-            />
-          </div>
+        {/* Comparison table — takes remaining height, full width */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+          <ComparisonTable
+            selectedAircraft={selectedAircraft}
+            aircraft={aircraft}
+          />
         </div>
       </div>
 

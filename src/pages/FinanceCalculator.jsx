@@ -7,6 +7,7 @@ import FinanceInputs from '@/components/finance/FinanceInputs';
 import FinanceResults from '@/components/finance/FinanceResults';
 import AmortizationTable from '@/components/finance/AmortizationTable';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
+import { useCurrency } from '@/hooks/use-currency';
 
 const defaultValues = {
   purchasePrice: 5000000,
@@ -29,6 +30,7 @@ export default function FinanceCalculator() {
   const [values, setValues] = useState(defaultValues);
   const [activeTab, setActiveTab] = useState('summary');
   const [pdfLoading, setPdfLoading] = useState(false);
+  const { formatNumber, currencySymbol, selectedCurrency, convertAmount } = useCurrency();
 
   // Calculate loan and operating costs
   const calculations = useMemo(() => {
@@ -97,13 +99,13 @@ export default function FinanceCalculator() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Month', 'Payment', 'Principal', 'Interest', 'Balance'];
+    const headers = ['Month', `Payment (${selectedCurrency})`, `Principal (${selectedCurrency})`, `Interest (${selectedCurrency})`, `Balance (${selectedCurrency})`];
     const rows = calculations.schedule.map(row => [
       row.month,
-      row.payment.toFixed(2),
-      row.principal.toFixed(2),
-      row.interest.toFixed(2),
-      row.balance.toFixed(2)
+      convertAmount(row.payment).toFixed(2),
+      convertAmount(row.principal).toFixed(2),
+      convertAmount(row.interest).toFixed(2),
+      convertAmount(row.balance).toFixed(2)
     ]);
 
     const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n');
@@ -122,7 +124,6 @@ export default function FinanceCalculator() {
       const { default: autoTable } = await import('jspdf-autotable');
 
       const doc = new jsPDF();
-      const fmt = (n) => Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
       // Title
       doc.setFontSize(18);
@@ -135,15 +136,15 @@ export default function FinanceCalculator() {
       // Loan Summary
       autoTable(doc, {
         startY: 35,
-        head: [['Loan Summary', 'Amount']],
+        head: [['Loan Summary', `Amount (${selectedCurrency})`]],
         body: [
-          ['Purchase Price', `$${fmt(values.purchasePrice)}`],
-          ['Down Payment', `$${fmt(calculations.downPayment)}`],
-          ['Loan Amount', `$${fmt(calculations.loanAmount)}`],
-          ['Monthly Payment', `$${fmt(calculations.monthlyPayment)}`],
-          ['Total Interest', `$${fmt(calculations.totalInterest)}`],
-          ['Total Loan Cost', `$${fmt(calculations.totalLoanCost)}`],
-          ...(values.loanType === 'balloon' ? [['Residual Value', `$${fmt(calculations.residualValue)}`]] : []),
+          ['Purchase Price', formatNumber(values.purchasePrice, { maximumFractionDigits: 2 })],
+          ['Down Payment', formatNumber(calculations.downPayment, { maximumFractionDigits: 2 })],
+          ['Loan Amount', formatNumber(calculations.loanAmount, { maximumFractionDigits: 2 })],
+          ['Monthly Payment', formatNumber(calculations.monthlyPayment, { maximumFractionDigits: 2 })],
+          ['Total Interest', formatNumber(calculations.totalInterest, { maximumFractionDigits: 2 })],
+          ['Total Loan Cost', formatNumber(calculations.totalLoanCost, { maximumFractionDigits: 2 })],
+          ...(values.loanType === 'balloon' ? [['Residual Value', formatNumber(calculations.residualValue, { maximumFractionDigits: 2 })]] : []),
         ],
         headStyles: { fillColor: [14, 165, 233], textColor: 255 },
         alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -152,16 +153,16 @@ export default function FinanceCalculator() {
       // Operating Cost Summary
       autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 10,
-        head: [['Operating Costs (Annual)', 'Amount']],
+        head: [['Operating Costs (Annual)', `Amount (${selectedCurrency})`]],
         body: [
-          ['Fuel Cost', `$${fmt(calculations.annualFuelCost)}`],
-          ['Maintenance', `$${fmt(calculations.annualMaintenanceCost)}`],
-          ['Insurance', `$${fmt(values.insurancePerYear)}`],
-          ['Hangar', `$${fmt(values.hangarPerYear)}`],
-          ['Crew', `$${fmt(values.crewPerYear)}`],
-          ['Management', `$${fmt(values.managementPerYear)}`],
-          ['Total Annual Cost', `$${fmt(calculations.totalAnnualCost)}`],
-          ['Cost Per Flight Hour', `$${fmt(calculations.costPerHour)}`],
+          ['Fuel Cost', formatNumber(calculations.annualFuelCost, { maximumFractionDigits: 2 })],
+          ['Maintenance', formatNumber(calculations.annualMaintenanceCost, { maximumFractionDigits: 2 })],
+          ['Insurance', formatNumber(values.insurancePerYear, { maximumFractionDigits: 2 })],
+          ['Hangar', formatNumber(values.hangarPerYear, { maximumFractionDigits: 2 })],
+          ['Crew', formatNumber(values.crewPerYear, { maximumFractionDigits: 2 })],
+          ['Management', formatNumber(values.managementPerYear, { maximumFractionDigits: 2 })],
+          ['Total Annual Cost', formatNumber(calculations.totalAnnualCost, { maximumFractionDigits: 2 })],
+          ['Cost Per Flight Hour', formatNumber(calculations.costPerHour, { maximumFractionDigits: 2 })],
         ],
         headStyles: { fillColor: [14, 165, 233], textColor: 255 },
         alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -170,13 +171,13 @@ export default function FinanceCalculator() {
       // Amortization Schedule
       autoTable(doc, {
         startY: doc.lastAutoTable.finalY + 10,
-        head: [['Month', 'Payment', 'Principal', 'Interest', 'Balance']],
+        head: [['Month', `Payment (${selectedCurrency})`, `Principal (${selectedCurrency})`, `Interest (${selectedCurrency})`, `Balance (${selectedCurrency})`]],
         body: calculations.schedule.map(row => [
           row.month,
-          `$${fmt(row.payment)}`,
-          `$${fmt(row.principal)}`,
-          `$${fmt(row.interest)}`,
-          `$${fmt(row.balance)}`,
+          formatNumber(row.payment, { maximumFractionDigits: 2 }),
+          formatNumber(row.principal, { maximumFractionDigits: 2 }),
+          formatNumber(row.interest, { maximumFractionDigits: 2 }),
+          formatNumber(row.balance, { maximumFractionDigits: 2 }),
         ]),
         headStyles: { fillColor: [14, 165, 233], textColor: 255 },
         alternateRowStyles: { fillColor: [245, 245, 245] },
@@ -192,72 +193,67 @@ export default function FinanceCalculator() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-sky-400 text-sm mb-3">
-                <Calculator className="w-4 h-4" />
-                <span>Finance Tools</span>
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <div className="h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)] bg-slate-950 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="bg-slate-950 border-b border-slate-800 text-white py-3 flex-shrink-0">
+          <div className="px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Calculator className="w-4 h-4 text-sky-400" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold leading-tight">Finance Calculator</h1>
+                  <p className="text-xs text-slate-500 hidden sm:block">Acquisition costs, payments, and total cost of ownership</p>
+                </div>
               </div>
-              <h1 className="text-3xl lg:text-4xl font-bold mb-3">Aircraft Finance Calculator</h1>
-              <p className="text-slate-300 max-w-2xl">
-                Calculate acquisition costs, monthly payments, and total cost of ownership for your aircraft purchase.
-              </p>
+              <div className="flex items-center gap-3">
+                <TabsList className="bg-slate-800 border border-slate-700">
+                  <TabsTrigger value="summary" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
+                    <BarChart3 className="w-4 h-4" />
+                    Summary
+                  </TabsTrigger>
+                  <TabsTrigger value="schedule" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
+                    <FileText className="w-4 h-4" />
+                    Schedule
+                  </TabsTrigger>
+                </TabsList>
+                <Button
+                  onClick={handleExportPDF}
+                  disabled={pdfLoading}
+                  size="sm"
+                  className="bg-sky-600 hover:bg-sky-700 text-white"
+                >
+                  {pdfLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-2" />
+                  )}
+                  Export PDF
+                </Button>
+                <CurrencySwitcher />
+              </div>
             </div>
-            <CurrencySwitcher />
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Panel - Inputs */}
-          <div className="lg:w-[420px] flex-shrink-0">
-            <div className="sticky top-24">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Parameters</h2>
-                <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Reset
-                </Button>
-              </div>
-              <FinanceInputs values={values} onChange={setValues} />
-            </div>
-          </div>
-
-          {/* Right Panel - Results */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="flex items-center justify-between mb-6">
-                  <TabsList className="bg-slate-800 border border-slate-700">
-                    <TabsTrigger value="summary" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
-                      <BarChart3 className="w-4 h-4" />
-                      Summary
-                    </TabsTrigger>
-                    <TabsTrigger value="schedule" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white">
-                      <FileText className="w-4 h-4" />
-                      Schedule
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <Button
-                    onClick={handleExportPDF}
-                    disabled={pdfLoading}
-                    className="bg-sky-600 hover:bg-sky-700 text-white"
-                  >
-                    {pdfLoading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Download className="w-4 h-4 mr-2" />
-                    )}
-                    Export PDF
+        <div className="px-6 py-4 flex-1 min-h-0 overflow-hidden">
+          <div className="flex flex-col lg:flex-row gap-4 h-full">
+            {/* Left Panel - Inputs */}
+            <div className="lg:w-[300px] flex-shrink-0 overflow-y-auto min-h-0 scrollbar-thin">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-white">Parameters</h2>
+                  <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
+                    <RefreshCw className="w-4 h-4 mr-1" />
+                    Reset
                   </Button>
                 </div>
+                <FinanceInputs values={values} onChange={setValues} />
+            </div>
 
+            {/* Right Panel - Results */}
+            <div className="flex-1 min-w-0 overflow-y-auto min-h-0 scrollbar-thin">
                 <TabsContent value="summary" className="mt-0">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -278,11 +274,10 @@ export default function FinanceCalculator() {
                     />
                   </motion.div>
                 </TabsContent>
-              </Tabs>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Tabs>
   );
 }

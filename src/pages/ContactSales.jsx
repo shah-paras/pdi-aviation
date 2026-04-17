@@ -6,22 +6,22 @@ export default function ContactSales() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Hero */}
-      <section className="relative py-16 lg:py-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="pt-12 pb-8 lg:pt-16 lg:pb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
             className="max-w-2xl"
           >
-            <div className="flex items-center gap-2 text-sky-400 text-sm mb-4">
-              <Phone className="w-4 h-4" />
-              <span>Contact Sales</span>
-            </div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4">
-              Let's Start a Conversation
+            <h1 className="text-3xl lg:text-5xl font-bold text-white leading-tight">
+              Let's Start a{' '}
+              <span className="bg-gradient-to-r from-sky-400 to-blue-500 bg-clip-text text-transparent font-serif italic">
+                Conversation
+              </span>
             </h1>
-            <p className="text-lg text-slate-300">
+            <div className="w-16 h-px bg-sky-400/40 mt-6 mb-4" />
+            <p className="text-slate-400 max-w-lg">
               Whether you're looking to buy, sell, or explore your options in private aviation,
               our expert team is ready to help.
             </p>
