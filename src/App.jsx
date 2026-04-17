@@ -4,8 +4,10 @@ import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { CurrencyProvider } from '@/lib/CurrencyContext'
+import { AuthProvider } from '@/lib/auth/AuthProvider'
+import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import NavigationTracker from '@/lib/NavigationTracker'
-import { pagesConfig, LAZY_PAGES } from './pages.config'
+import { pagesConfig, LAZY_PAGES, GATED_PAGES } from './pages.config'
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import PageNotFound from './lib/PageNotFound';
@@ -24,6 +26,9 @@ function AppRoutes() {
     }
     return element;
   };
+
+  const wrapWithGate = (path, element) =>
+    GATED_PAGES.has(path) ? <ProtectedRoute>{element}</ProtectedRoute> : element;
 
   return (
     <AnimatePresence mode="wait">
@@ -52,7 +57,7 @@ function AppRoutes() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {wrapWithSuspense(path, <Page />)}
+                  {wrapWithGate(path, wrapWithSuspense(path, <Page />))}
                 </motion.div>
               </Layout>
             }
@@ -69,8 +74,10 @@ function App() {
     <QueryClientProvider client={queryClientInstance}>
       <CurrencyProvider>
         <Router>
-          <NavigationTracker />
-          <AppRoutes />
+          <AuthProvider>
+            <NavigationTracker />
+            <AppRoutes />
+          </AuthProvider>
         </Router>
         <Toaster />
       </CurrencyProvider>

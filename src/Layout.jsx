@@ -6,6 +6,7 @@ import {
   BarChart3, Map, Calculator, BookOpen, Users, Phone, ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import AccountMenu from '@/components/auth/AccountMenu';
 
 
 export default function Layout({ children }) {
@@ -71,7 +72,7 @@ export default function Layout({ children }) {
               ))}
             </nav>
 
-            {/* CTA Button */}
+            {/* CTA + account */}
             <div className="hidden lg:flex items-center gap-3">
               <Link
                 to={createPageUrl('ContactSales')}
@@ -80,6 +81,7 @@ export default function Layout({ children }) {
                 <Phone className="w-4 h-4" />
                 Contact Sales
               </Link>
+              <AccountMenu variant="desktop" />
             </div>
 
             {/* Mobile Menu Button */}
@@ -123,6 +125,7 @@ export default function Layout({ children }) {
                   <Phone className="w-4 h-4" />
                   Contact Sales
                 </Link>
+                <AccountMenu variant="mobile" />
               </div>
             </motion.div>
           )}
