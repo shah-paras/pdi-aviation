@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth/AuthProvider';
 import { useSubscription } from '@/lib/auth/useSubscription';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
+import { TIERS, TIER_COLORS } from '@/config/tiers';
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -18,7 +19,7 @@ function formatDate(iso) {
 
 export default function Account() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { subscription, isActive, isLoading: subLoading } = useSubscription();
+  const { subscription, isActive, tier, isLoading: subLoading } = useSubscription();
   const navigate = useNavigate();
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -76,11 +77,15 @@ export default function Account() {
               <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Subscription</h2>
               <div className="mt-3 flex items-center gap-3">
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  isActive ? 'bg-sky-400/10 text-sky-300 border border-sky-400/30' : 'bg-slate-800 text-slate-400 border border-white/10'
+                  isActive
+                    ? `${TIER_COLORS[tier]?.bg ?? 'bg-sky-400/10'} ${TIER_COLORS[tier]?.text ?? 'text-sky-300'} border ${TIER_COLORS[tier]?.border ?? 'border-sky-400/30'}`
+                    : 'bg-slate-800 text-slate-400 border border-white/10'
                 }`}>
-                  {subscription?.status ?? (subLoading ? 'Loading…' : 'none')}
+                  {subLoading ? 'Loading…' : (TIERS[tier]?.name ?? 'Free')}
                 </span>
-                {subscription?.plan && <span className="text-sm text-slate-300">{subscription.plan}</span>}
+                {isActive && subscription?.plan && (
+                  <span className="text-sm text-slate-300 capitalize">{subscription.plan}</span>
+                )}
               </div>
               {isActive && subscription?.current_period_end && (
                 <p className="mt-3 text-xs text-slate-500">
@@ -105,7 +110,7 @@ export default function Account() {
                   to="/Pricing"
                   className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm"
                 >
-                  Upgrade to Pro
+                  View plans
                 </Link>
               )}
             </div>

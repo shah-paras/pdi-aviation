@@ -14,20 +14,22 @@ export function useSubscription() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('subscriptions')
-        .select('status, plan, provider, current_period_end')
+        .select('status, plan, tier, provider, current_period_end')
         .eq('user_id', user.id)
         .maybeSingle();
       if (error) throw error;
-      return data ?? { status: 'none', plan: null, provider: null, current_period_end: null };
+      return data ?? { status: 'none', plan: null, tier: 'curious', provider: null, current_period_end: null };
     },
   });
 
   const subscription = query.data ?? null;
   const isActive = !!subscription && ACTIVE_STATUSES.has(subscription.status);
+  const tier = (isActive && subscription?.tier) || 'curious';
 
   return {
     subscription,
     isActive,
+    tier,
     isLoading: authLoading || query.isLoading,
     error: query.error,
     refetch: query.refetch,

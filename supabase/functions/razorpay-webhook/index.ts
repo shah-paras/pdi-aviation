@@ -31,6 +31,7 @@ serve(async (req) => {
       user_id: userId,
       status,
       plan: sub.notes?.billing ?? null,
+      tier: sub.notes?.tier ?? 'enthusiast',
       provider: 'razorpay',
       provider_customer_id: sub.customer_id ?? null,
       provider_subscription_id: sub.id,
@@ -99,7 +100,7 @@ interface RazorpayEvent {
         status: string;
         customer_id?: string;
         current_end?: number;
-        notes?: { user_id?: string; billing?: string };
+        notes?: { user_id?: string; billing?: string; tier?: string };
       };
     };
   };

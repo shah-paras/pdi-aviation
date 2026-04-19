@@ -18,6 +18,7 @@ This guide walks through the external infra setup required to make the auth, sub
    - `service_role` key (keep server-side only) → `SUPABASE_SERVICE_ROLE_KEY`
 3. Run the schema:
    - Open **SQL Editor** → paste `supabase/migrations/0001_init.sql` → Run
+   - Then paste `supabase/migrations/0002_add_tier.sql` → Run (adds `tier` column to subscriptions)
    - Confirm `public.profiles` and `public.subscriptions` exist with RLS enabled
 
 ## 2. Auth providers
@@ -33,9 +34,10 @@ In Supabase Dashboard → **Authentication → Providers**:
 ## 3. Stripe setup (global payments)
 
 1. https://dashboard.stripe.com → create account (test mode is fine to start)
-2. **Products → + Add product** — name "PDI Aviation Pro"
-   - Add a **Recurring** price, monthly → note the `price_...` ID → `STRIPE_PRICE_MONTHLY`
-   - Add another Recurring price, annual → note the ID → `STRIPE_PRICE_ANNUAL`
+2. **Products → + Add product** — create 3 products with recurring prices:
+   - **Enthusiast**: Monthly ($2.49) → `STRIPE_PRICE_ENTHUSIAST_MONTHLY`, Annual ($23.99) → `STRIPE_PRICE_ENTHUSIAST_ANNUAL`
+   - **Insider**: Monthly ($5.99) → `STRIPE_PRICE_INSIDER_MONTHLY`, Annual ($59.99) → `STRIPE_PRICE_INSIDER_ANNUAL`
+   - **Superfan**: Monthly ($11.99) → `STRIPE_PRICE_SUPERFAN_MONTHLY`, Annual ($119.99) → `STRIPE_PRICE_SUPERFAN_ANNUAL`
 3. **Developers → API keys**:
    - Publishable key → `VITE_STRIPE_PUBLISHABLE_KEY`
    - Secret key → `STRIPE_SECRET_KEY` (server-side only)
@@ -48,9 +50,13 @@ In Supabase Dashboard → **Authentication → Providers**:
 ## 4. Razorpay setup (India payments)
 
 1. https://dashboard.razorpay.com → sign up → complete KYC
-2. **Subscriptions → Plans → Create Plan**:
-   - Monthly plan (INR, e.g. ₹2,499) → note the `plan_...` ID → `RAZORPAY_PLAN_MONTHLY`
-   - Yearly plan (INR, e.g. ₹24,999) → note the ID → `RAZORPAY_PLAN_ANNUAL`
+2. **Subscriptions → Plans → Create Plan** — create 6 plans (3 tiers × 2 billing cycles):
+   - **Enthusiast Monthly** (₹199/mo) → `RAZORPAY_PLAN_ENTHUSIAST_MONTHLY`
+   - **Enthusiast Annual** (₹1,990/yr) → `RAZORPAY_PLAN_ENTHUSIAST_ANNUAL`
+   - **Insider Monthly** (₹499/mo) → `RAZORPAY_PLAN_INSIDER_MONTHLY`
+   - **Insider Annual** (₹4,990/yr) → `RAZORPAY_PLAN_INSIDER_ANNUAL`
+   - **Superfan Monthly** (₹999/mo) → `RAZORPAY_PLAN_SUPERFAN_MONTHLY`
+   - **Superfan Annual** (₹9,990/yr) → `RAZORPAY_PLAN_SUPERFAN_ANNUAL`
 3. **Account & Settings → API Keys → Generate Key**:
    - Key ID → `VITE_RAZORPAY_KEY_ID`
    - Key Secret → `RAZORPAY_KEY_SECRET` (server-side only)
@@ -72,13 +78,21 @@ supabase secrets set \
   SUPABASE_SERVICE_ROLE_KEY=... \
   STRIPE_SECRET_KEY=sk_test_... \
   STRIPE_WEBHOOK_SECRET=whsec_... \
-  STRIPE_PRICE_MONTHLY=price_... \
-  STRIPE_PRICE_ANNUAL=price_... \
+  STRIPE_PRICE_ENTHUSIAST_MONTHLY=price_... \
+  STRIPE_PRICE_ENTHUSIAST_ANNUAL=price_... \
+  STRIPE_PRICE_INSIDER_MONTHLY=price_... \
+  STRIPE_PRICE_INSIDER_ANNUAL=price_... \
+  STRIPE_PRICE_SUPERFAN_MONTHLY=price_... \
+  STRIPE_PRICE_SUPERFAN_ANNUAL=price_... \
   RAZORPAY_KEY_ID=rzp_test_... \
   RAZORPAY_KEY_SECRET=... \
   RAZORPAY_WEBHOOK_SECRET=... \
-  RAZORPAY_PLAN_MONTHLY=plan_... \
-  RAZORPAY_PLAN_ANNUAL=plan_... \
+  RAZORPAY_PLAN_ENTHUSIAST_MONTHLY=plan_SfQbvrAx9RSBd0 \
+  RAZORPAY_PLAN_ENTHUSIAST_ANNUAL=plan_... \
+  RAZORPAY_PLAN_INSIDER_MONTHLY=plan_SfQcjPTbNlXnVc \
+  RAZORPAY_PLAN_INSIDER_ANNUAL=plan_... \
+  RAZORPAY_PLAN_SUPERFAN_MONTHLY=plan_SfQdtEpUHuSltp \
+  RAZORPAY_PLAN_SUPERFAN_ANNUAL=plan_... \
   SITE_URL=http://localhost:3000
 
 # Deploy all functions
@@ -107,25 +121,41 @@ Only `VITE_*` vars reach the browser; everything else must stay in `supabase sec
 
 ### Stripe (international flow)
 1. Visit `/Pricing`, select "Other" as country.
-2. Click Subscribe → redirects to Stripe Checkout.
+2. Click Subscribe on any tier (Enthusiast / Insider / Superfan) → redirects to Stripe Checkout.
 3. Use test card `4242 4242 4242 4242`, any future expiry, any CVC.
 4. Complete checkout → you land back on the next route.
-5. Check Supabase → `subscriptions` table → row with `status='active'`, `provider='stripe'`.
+5. Check Supabase → `subscriptions` table → row with `status='active'`, `provider='stripe'`, correct `tier`.
 6. Visit `/FinanceCalculator` — should render (gate lifts).
-7. On `/Account` click "Manage billing" → should open Stripe Customer Portal.
+7. On `/Account` — badge shows tier name (e.g. "Enthusiast") with tier-specific color. Click "Manage billing" → Stripe Customer Portal.
 
 ### Razorpay (India flow)
 1. Visit `/Pricing`, select "India".
-2. Click Subscribe → Razorpay modal opens.
+2. Click Subscribe on any tier → Razorpay modal opens.
 3. Use test card `4111 1111 1111 1111`, CVV `100`, any future expiry, or test UPI `success@razorpay`.
 4. Complete payment → modal closes.
-5. Wait for webhook → `subscriptions` row updates to `status='active'`, `provider='razorpay'`.
-6. Gated routes unlock.
+5. Wait for webhook → `subscriptions` row updates to `status='active'`, `provider='razorpay'`, correct `tier`.
+6. Gated routes unlock. `/Account` shows correct tier badge.
 
-### Negative test
+### Tier testing matrix
+
+Test each combination to ensure correct plan ID mapping and webhook processing:
+
+| Tier | Billing | Razorpay Plan ID | Stripe Price ID |
+|------|---------|-----------------|-----------------|
+| Enthusiast | Monthly | `plan_SfQbvrAx9RSBd0` | `STRIPE_PRICE_ENTHUSIAST_MONTHLY` |
+| Enthusiast | Annual | `RAZORPAY_PLAN_ENTHUSIAST_ANNUAL` | `STRIPE_PRICE_ENTHUSIAST_ANNUAL` |
+| Insider | Monthly | `plan_SfQcjPTbNlXnVc` | `STRIPE_PRICE_INSIDER_MONTHLY` |
+| Insider | Annual | `RAZORPAY_PLAN_INSIDER_ANNUAL` | `STRIPE_PRICE_INSIDER_ANNUAL` |
+| Superfan | Monthly | `plan_SfQdtEpUHuSltp` | `STRIPE_PRICE_SUPERFAN_MONTHLY` |
+| Superfan | Annual | `RAZORPAY_PLAN_SUPERFAN_ANNUAL` | `STRIPE_PRICE_SUPERFAN_ANNUAL` |
+
+For each row: subscribe → verify `subscriptions.tier` in Supabase → verify tool page access → verify `/Account` badge.
+
+### Negative tests
 1. In SQL editor: `update public.subscriptions set status='canceled' where user_id='<you>';`
 2. Visit `/FinanceCalculator` → you should be bounced to `/Pricing`.
 3. Sign out → gated routes bounce to `/Login`.
+4. Subscribe as Enthusiast → verify Insider/Superfan features remain locked (future feature gating).
 
 ## 8. Production deploy
 
