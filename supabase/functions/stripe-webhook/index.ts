@@ -64,6 +64,7 @@ async function upsertSubscription(userId: string, sub: Stripe.Subscription) {
     user_id: userId,
     status,
     plan: (sub.metadata?.billing as string) || sub.items?.data?.[0]?.price?.nickname || null,
+    tier: (sub.metadata?.tier as string) ?? 'enthusiast',
     provider: 'stripe',
     provider_customer_id: typeof sub.customer === 'string' ? sub.customer : sub.customer?.id,
     provider_subscription_id: sub.id,

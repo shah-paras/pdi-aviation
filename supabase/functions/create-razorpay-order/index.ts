@@ -1,6 +1,7 @@
 // Supabase Edge Function: create a Razorpay subscription for the current user.
-// Request: POST { billing: 'monthly' | 'annual' }
-// Requires: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_PLAN_MONTHLY, RAZORPAY_PLAN_ANNUAL.
+// Request: POST { billing: 'monthly' | 'annual', tier: 'enthusiast' | 'insider' | 'superfan' }
+// Requires: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET,
+//   RAZORPAY_PLAN_<TIER>_<BILLING> env vars (e.g. RAZORPAY_PLAN_ENTHUSIAST_MONTHLY).
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -21,10 +22,11 @@ serve(async (req) => {
     if (userErr || !userRes.user) return json({ error: 'Unauthenticated' }, 401);
     const user = userRes.user;
 
-    const { billing = 'monthly' } = await req.json().catch(() => ({}));
-    const planId = billing === 'annual'
-      ? Deno.env.get('RAZORPAY_PLAN_ANNUAL')
-      : Deno.env.get('RAZORPAY_PLAN_MONTHLY');
+    const { billing = 'monthly', tier = 'enthusiast' } = await req.json().catch(() => ({}));
+    const validTiers = ['enthusiast', 'insider', 'superfan'];
+    if (!validTiers.includes(tier)) return json({ error: 'Invalid tier' }, 400);
+
+    const planId = Deno.env.get(`RAZORPAY_PLAN_${tier.toUpperCase()}_${billing.toUpperCase()}`);
     if (!planId) return json({ error: 'Plan not configured' }, 500);
 
     const keyId = Deno.env.get('RAZORPAY_KEY_ID') ?? '';
@@ -38,7 +40,7 @@ serve(async (req) => {
         plan_id: planId,
         total_count: billing === 'annual' ? 5 : 60,
         customer_notify: 1,
-        notes: { user_id: user.id, billing },
+        notes: { user_id: user.id, billing, tier },
       }),
     });
 
