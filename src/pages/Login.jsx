@@ -34,7 +34,8 @@ export default function Login() {
       await signIn(values.email, values.password);
       navigate(decodeURIComponent(next), { replace: true });
     } catch (err) {
-      setFormError(err?.message || 'Could not sign in');
+      const msg = typeof err === 'string' ? err : err?.message || err?.error_description || JSON.stringify(err);
+      setFormError(msg || 'Could not sign in');
     }
   };
 
@@ -43,7 +44,8 @@ export default function Login() {
     try {
       await signInWithGoogle();
     } catch (err) {
-      setFormError(err?.message || 'Google sign-in failed');
+      const msg = typeof err === 'string' ? err : err?.message || err?.error_description || JSON.stringify(err);
+      setFormError(msg || 'Google sign-in failed');
     }
   };
 

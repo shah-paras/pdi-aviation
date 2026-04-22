@@ -33,7 +33,8 @@ export default function ResetPassword() {
       if (error) throw error;
       setSuccess(true);
     } catch (err) {
-      setFormError(err?.message || 'Could not send reset link');
+      const msg = typeof err === 'string' ? err : err?.message || err?.error_description || JSON.stringify(err);
+      setFormError(msg || 'Could not send reset link');
     }
   };
 

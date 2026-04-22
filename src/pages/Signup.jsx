@@ -53,7 +53,8 @@ export default function Signup() {
         setSuccess(true);
       }
     } catch (err) {
-      setFormError(err?.message || 'Could not create account');
+      const msg = typeof err === 'string' ? err : err?.message || err?.error_description || JSON.stringify(err);
+      setFormError(msg || 'Could not create account');
     }
   };
 
