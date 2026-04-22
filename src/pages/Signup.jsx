@@ -42,9 +42,13 @@ export default function Signup() {
     setFormError(null);
     try {
       const country = detectCountry();
-      const { session } = await signUp({ ...values, country });
+      const { session, user } = await signUp({ ...values, country });
       if (session) {
         navigate(decodeURIComponent(next), { replace: true });
+      } else if (user && user.identities?.length === 0) {
+        setFormError(
+          'An account with this email already exists. If you signed up with Google, log in with Google and set a password from your Account page.',
+        );
       } else {
         setSuccess(true);
       }

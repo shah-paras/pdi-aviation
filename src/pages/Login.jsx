@@ -103,7 +103,12 @@ export default function Login() {
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-slate-300">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-slate-300">Password</Label>
+                <Link to="/ResetPassword" className="text-xs text-sky-300 hover:text-sky-200">
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"

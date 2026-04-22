@@ -8,6 +8,8 @@ import FinanceResults from '@/components/finance/FinanceResults';
 import AmortizationTable from '@/components/finance/AmortizationTable';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
 import { useCurrency } from '@/hooks/use-currency';
+import FeatureGate from '@/components/auth/FeatureGate';
+import { useTierLimits } from '@/hooks/useTierLimits';
 
 const defaultValues = {
   purchasePrice: 5000000,
@@ -31,6 +33,7 @@ export default function FinanceCalculator() {
   const [activeTab, setActiveTab] = useState('summary');
   const [pdfLoading, setPdfLoading] = useState(false);
   const { formatNumber, currencySymbol, selectedCurrency, convertAmount } = useCurrency();
+  const { limits } = useTierLimits();
 
   // Calculate loan and operating costs
   const calculations = useMemo(() => {
@@ -242,6 +245,7 @@ export default function FinanceCalculator() {
           <div className="flex flex-col lg:flex-row gap-4 h-full">
             {/* Left Panel - Inputs */}
             <div className="lg:w-[300px] flex-shrink-0 overflow-y-auto min-h-0 scrollbar-thin">
+              <FeatureGate requiredTier="enthusiast" feature="Edit calculator inputs" mode="blur">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-white">Parameters</h2>
                   <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
@@ -250,6 +254,7 @@ export default function FinanceCalculator() {
                   </Button>
                 </div>
                 <FinanceInputs values={values} onChange={setValues} />
+              </FeatureGate>
             </div>
 
             {/* Right Panel - Results */}

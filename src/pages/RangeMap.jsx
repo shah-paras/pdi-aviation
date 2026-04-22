@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import AircraftSearchSelect from '@/components/range-map/AircraftSearchSelect';
 import AirportSearchSelect from '@/components/range-map/AirportSearchSelect';
+import FeatureGate from '@/components/auth/FeatureGate';
 import { motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -22,7 +23,7 @@ import {
   findRangeBoundaryIndex,
 } from '@/lib/utils/mapUtils';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import aircraftModels from '@/data/aircraftModels';
+import { useAircraftModels } from '@/hooks/useAircraftModels';
 
 // Top-down jet silhouette SVG with glow halo (points north/up by default)
 const RING_COLORS = ['#EF4444', '#F87171'];
@@ -48,6 +49,8 @@ const JET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" 
 
 
 export default function RangeMap() {
+  const { data: aircraftModels = [] } = useAircraftModels();
+
   const [origin, setOrigin] = useState({ code: 'DEL', name: 'Indira Gandhi International Airport', lat: 28.5665, lng: 77.1031 });
   const [selectedAircraftId, setSelectedAircraftId] = useState('');
   const [rangePercentage, setRangePercentage] = useState(100);
@@ -66,7 +69,7 @@ export default function RangeMap() {
     aircraftModels.filter(a =>
       a.type === 'FW' && a.max_range_nm && a.max_range_nm > 0
     ),
-    []
+    [aircraftModels]
   );
 
   const selectedAircraft = aircraft.find(a => a.id === selectedAircraftId);
@@ -437,11 +440,13 @@ export default function RangeMap() {
               <MapPin className="w-4 h-4 text-sky-400" />
               Origin Airport
             </Label>
-            <AirportSearchSelect
-              value={origin}
-              onValueChange={setOrigin}
-              placeholder="Search origin airport..."
-            />
+            <FeatureGate requiredTier="enthusiast" feature="Origin selection" mode="lock">
+              <AirportSearchSelect
+                value={origin}
+                onValueChange={setOrigin}
+                placeholder="Search origin airport..."
+              />
+            </FeatureGate>
           </div>
 
           {/* Destination */}
@@ -476,11 +481,13 @@ export default function RangeMap() {
               <Plane className="w-4 h-4 text-sky-400" />
               Aircraft Model
             </Label>
-            <AircraftSearchSelect
-              aircraft={aircraft}
-              value={selectedAircraftId}
-              onValueChange={setSelectedAircraftId}
-            />
+            <FeatureGate requiredTier="enthusiast" feature="Aircraft model selection" mode="lock">
+              <AircraftSearchSelect
+                aircraft={aircraft}
+                value={selectedAircraftId}
+                onValueChange={setSelectedAircraftId}
+              />
+            </FeatureGate>
           </div>
 
           {/* Selected Aircraft Info */}
@@ -549,26 +556,40 @@ export default function RangeMap() {
               Range Rings
             </Label>
             <div className="space-y-3">
-              {[
-                { label: '100% Range', color: 'bg-red-500', index: 0 },
-                { label: '50% Range', color: 'bg-red-500', index: 1 }
-              ].map(ring => (
-                <div key={ring.index} className="flex items-center justify-between">
+              {/* 100% Range — always available */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <span className="text-slate-300 text-sm">100% Range</span>
+                </div>
+                <Switch
+                  checked={showRings[0]}
+                  onCheckedChange={(checked) => {
+                    const newRings = [...showRings];
+                    newRings[0] = checked;
+                    setShowRings(newRings);
+                  }}
+                  aria-label="Toggle 100% Range"
+                />
+              </div>
+              {/* 50% Range — enthusiast+ */}
+              <FeatureGate requiredTier="enthusiast" feature="50% range ring" mode="lock">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${ring.color}`} />
-                    <span className="text-slate-300 text-sm">{ring.label}</span>
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="text-slate-300 text-sm">50% Range</span>
                   </div>
                   <Switch
-                    checked={showRings[ring.index]}
+                    checked={showRings[1]}
                     onCheckedChange={(checked) => {
                       const newRings = [...showRings];
-                      newRings[ring.index] = checked;
+                      newRings[1] = checked;
                       setShowRings(newRings);
                     }}
-                    aria-label={`Toggle ${ring.label}`}
+                    aria-label="Toggle 50% Range"
                   />
                 </div>
-              ))}
+              </FeatureGate>
             </div>
           </div>
 

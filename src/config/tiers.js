@@ -217,3 +217,72 @@ export function getTierIndex(tierName) {
 export function hasAccess(userTier, requiredTier) {
   return getTierIndex(userTier) >= getTierIndex(requiredTier);
 }
+
+// ─── Per-tier feature limits ──────────────────────────────────────────────────
+
+export const TIER_LIMITS = {
+  curious: {
+    comparisonSlots: 2,
+    comparisonFullSpecs: false,
+    comparisonPdfExport: false,
+    comparisonSave: false,
+    rangeSelectModel: false,
+    rangeSelectOrigin: false,
+    rangeRings50: false,
+    rangeMultiCity: false,
+    financeEditInputs: false,
+    fleetSearchFilter: false,
+    fleetCsvExport: false,
+    blogArticlesPerMonth: 3,
+    marketReports: false,
+  },
+  enthusiast: {
+    comparisonSlots: 3,
+    comparisonFullSpecs: true,
+    comparisonPdfExport: true,
+    comparisonSave: false,
+    rangeSelectModel: true,
+    rangeSelectOrigin: true,
+    rangeRings50: true,
+    rangeMultiCity: false,
+    financeEditInputs: true,
+    fleetSearchFilter: true,
+    fleetCsvExport: false,
+    blogArticlesPerMonth: Infinity,
+    marketReports: false,
+  },
+  insider: {
+    comparisonSlots: 3,
+    comparisonFullSpecs: true,
+    comparisonPdfExport: true,
+    comparisonSave: true,
+    rangeSelectModel: true,
+    rangeSelectOrigin: true,
+    rangeRings50: true,
+    rangeMultiCity: true,
+    financeEditInputs: true,
+    fleetSearchFilter: true,
+    fleetCsvExport: true,
+    blogArticlesPerMonth: Infinity,
+    marketReports: true,
+  },
+  superfan: {
+    comparisonSlots: 3,
+    comparisonFullSpecs: true,
+    comparisonPdfExport: true,
+    comparisonSave: true,
+    rangeSelectModel: true,
+    rangeSelectOrigin: true,
+    rangeRings50: true,
+    rangeMultiCity: true,
+    financeEditInputs: true,
+    fleetSearchFilter: true,
+    fleetCsvExport: true,
+    blogArticlesPerMonth: Infinity,
+    marketReports: true,
+  },
+};
+
+export function getTierLimits(tierName) {
+  return TIER_LIMITS[tierName] || TIER_LIMITS.curious;
+}

@@ -5,9 +5,10 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import operators from '@/data/operators';
-import registrations from '@/data/registrations';
+import { useOperators } from '@/hooks/useOperators';
+import { Loader2 } from 'lucide-react';
 
+import FeatureGate from '@/components/auth/FeatureGate';
 import FleetHero from '@/components/fleet/FleetHero';
 import FleetDirectoryStats from '@/components/fleet/FleetDirectoryStats';
 import CategoryTabs from '@/components/fleet/CategoryTabs';
@@ -22,33 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-/* ------------------------------------------------------------------ */
-/* Constants                                                           */
-/* ------------------------------------------------------------------ */
-
-const TYPE_TABS = (() => {
-  const all = operators.length;
-  let fw = 0;
-  let rw = 0;
-  let balloon = 0;
-
-  for (const op of operators) {
-    const types = new Set((op.fleet || []).map((a) => a.type));
-    if (types.has('FW')) fw++;
-    if (types.has('RW')) rw++;
-    if (types.has('B')) balloon++;
-  }
-
-  return [
-    { key: 'all', label: 'All', count: all },
-    { key: 'FW', label: 'Fixed Wing', count: fw },
-    { key: 'RW', label: 'Rotary Wing', count: rw },
-    { key: 'B', label: 'Balloon', count: balloon },
-  ];
-})();
-
-const ALL_STATES = [...new Set(operators.map((op) => op.state))].sort();
 
 /* ------------------------------------------------------------------ */
 /* Sort comparators                                                    */
@@ -97,6 +71,52 @@ function ensureFadeStyle() {
 /* ------------------------------------------------------------------ */
 
 export default function FleetDirectory() {
+  const { data: operators = [], isLoading: dataLoading } = useOperators();
+
+  // Derive registrations from operators fleet data
+  const registrations = useMemo(
+    () =>
+      operators.flatMap((op) =>
+        (op.fleet || op.aircraft_fleet || []).map((ac) => ({
+          registration: ac.registration,
+          operatorId: op.id,
+          operatorName: op.name,
+          modelId: ac.modelId ?? ac.model_id,
+          model: ac.model,
+          seatingCapacity: ac.seatingCapacity ?? ac.seating_capacity,
+          type: ac.type,
+        })),
+      ),
+    [operators],
+  );
+
+  // Compute type tabs from operators data
+  const TYPE_TABS = useMemo(() => {
+    const all = operators.length;
+    let fw = 0;
+    let rw = 0;
+    let balloon = 0;
+
+    for (const op of operators) {
+      const types = new Set((op.fleet || op.aircraft_fleet || []).map((a) => a.type));
+      if (types.has('FW')) fw++;
+      if (types.has('RW')) rw++;
+      if (types.has('B')) balloon++;
+    }
+
+    return [
+      { key: 'all', label: 'All', count: all },
+      { key: 'FW', label: 'Fixed Wing', count: fw },
+      { key: 'RW', label: 'Rotary Wing', count: rw },
+      { key: 'B', label: 'Balloon', count: balloon },
+    ];
+  }, [operators]);
+
+  const ALL_STATES = useMemo(
+    () => [...new Set(operators.map((op) => op.state))].sort(),
+    [operators],
+  );
+
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeType, setActiveType] = useState('all');
@@ -133,7 +153,7 @@ export default function FleetDirectory() {
     // Type filter — keep operators that have at least one aircraft of the selected type
     if (activeType !== 'all') {
       list = list.filter((op) =>
-        (op.fleet || []).some((a) => a.type === activeType),
+        (op.fleet || op.aircraft_fleet || []).some((a) => a.type === activeType),
       );
     }
 
@@ -149,7 +169,7 @@ export default function FleetDirectory() {
         if (op.name.toLowerCase().includes(q)) return true;
         if (op.city.toLowerCase().includes(q)) return true;
         if (op.state.toLowerCase().includes(q)) return true;
-        return (op.fleet || []).some(
+        return (op.fleet || op.aircraft_fleet || []).some(
           (a) =>
             a.registration?.toLowerCase().includes(q) ||
             a.model?.toLowerCase().includes(q),
@@ -172,6 +192,17 @@ export default function FleetDirectory() {
     setModalOperator(operator);
   }, []);
 
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-sky-400" />
+          <p className="text-sm text-slate-400">Loading fleet data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Hero */}
@@ -186,44 +217,49 @@ export default function FleetDirectory() {
         <FleetDirectoryStats operators={operators} registrations={registrations} />
       </div>
 
-      {/* Type tabs */}
-      <CategoryTabs
-        tabs={TYPE_TABS}
-        activeTab={activeType}
-        onTabChange={setActiveType}
-      />
+      {/* Type tabs + toolbar — gated for enthusiast+ */}
+      <FeatureGate requiredTier="enthusiast" feature="Search & filter" mode="blur">
+        <CategoryTabs
+          tabs={TYPE_TABS}
+          activeTab={activeType}
+          onTabChange={setActiveType}
+        />
+
+        {/* Toolbar — stacks on mobile */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3">
+            <p className="text-sm text-slate-400">
+              Showing {filteredOperators.length} of {operators.length} operators
+            </p>
+
+            <div className="flex items-center gap-3">
+              {/* State filter dropdown */}
+              <Select value={selectedState} onValueChange={setSelectedState}>
+                <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 flex-1 sm:flex-none sm:w-[160px]">
+                  <SelectValue placeholder="All States" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All States</SelectItem>
+                  {ALL_STATES.map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {/* Sort dropdown */}
+              <FleetToolbar
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+              />
+            </div>
+          </div>
+        </div>
+      </FeatureGate>
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
-        {/* Toolbar — stacks on mobile */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3">
-          <p className="text-sm text-slate-400">
-            Showing {filteredOperators.length} of {operators.length} operators
-          </p>
-
-          <div className="flex items-center gap-3">
-            {/* State filter dropdown */}
-            <Select value={selectedState} onValueChange={setSelectedState}>
-              <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 flex-1 sm:flex-none sm:w-[160px]">
-                <SelectValue placeholder="All States" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All States</SelectItem>
-                {ALL_STATES.map((state) => (
-                  <SelectItem key={state} value={state}>
-                    {state}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Sort dropdown */}
-            <FleetToolbar
-              sortBy={sortBy}
-              onSortChange={setSortBy}
-            />
-          </div>
-        </div>
 
         {/* Operator grid — CSS animation instead of 137 motion.divs */}
         {filteredOperators.length > 0 ? (

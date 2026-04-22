@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { User, LogOut, CreditCard, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useSubscription } from '@/lib/auth/useSubscription';
+import { TIERS, TIER_COLORS } from '@/config/tiers';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +24,7 @@ function initials(user) {
 
 export default function AccountMenu({ variant = 'desktop' }) {
   const { user, signOut } = useAuth();
-  const { isActive } = useSubscription();
+  const { isActive, tier } = useSubscription();
   const navigate = useNavigate();
 
   if (!user) {
@@ -51,9 +52,9 @@ export default function AccountMenu({ variant = 'desktop' }) {
       <div className="pt-3 mt-3 border-t border-white/10 space-y-2">
         <div className="px-4 py-2 text-xs text-slate-400">
           {user.email}
-          {isActive ? (
-            <span className="ml-2 inline-flex items-center rounded-full bg-sky-400/10 text-sky-300 px-2 py-0.5 text-[10px] uppercase tracking-wide">Pro</span>
-          ) : null}
+          <span className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${TIER_COLORS[tier]?.bg || 'bg-sky-400/10'} ${TIER_COLORS[tier]?.text || 'text-sky-300'}`}>
+            {TIERS[tier]?.name || 'Free'}
+          </span>
         </div>
         <Link
           to="/Account"
@@ -102,13 +103,11 @@ export default function AccountMenu({ variant = 'desktop' }) {
         <DropdownMenuLabel className="text-xs font-normal text-slate-400 truncate">
           {user.email}
         </DropdownMenuLabel>
-        {isActive ? (
-          <div className="px-2 pb-2">
-            <span className="inline-flex items-center rounded-full bg-sky-400/10 text-sky-300 px-2 py-0.5 text-[10px] uppercase tracking-wide">
-              Pro subscriber
-            </span>
-          </div>
-        ) : null}
+        <div className="px-2 pb-2">
+          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide ${TIER_COLORS[tier]?.bg || 'bg-sky-400/10'} ${TIER_COLORS[tier]?.text || 'text-sky-300'} border ${TIER_COLORS[tier]?.border || 'border-sky-400/30'}`}>
+            {TIERS[tier]?.name || 'Free'}
+          </span>
+        </div>
         <DropdownMenuSeparator className="bg-white/10" />
         <DropdownMenuItem asChild className="cursor-pointer focus:bg-white/10 focus:text-white">
           <Link to="/Account"><User className="w-4 h-4 mr-2" /> Account</Link>

@@ -14,10 +14,12 @@ const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Account = lazy(() => import("./pages/Account"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const UpdatePassword = lazy(() => import("./pages/UpdatePassword"));
 
 export const LAZY_PAGES = new Set([
   'AircraftComparison', 'RangeMap', 'FinanceCalculator', 'FleetDirectory',
-  'Login', 'Signup', 'Pricing', 'Account',
+  'Login', 'Signup', 'Pricing', 'Account', 'ResetPassword', 'UpdatePassword',
 ]);
 
 // Pages requiring an active subscription. Kept as a Set so App.jsx can check membership cheaply.
@@ -39,6 +41,8 @@ export const PAGES = {
   Signup,
   Pricing,
   Account,
+  ResetPassword,
+  UpdatePassword,
 };
 
 export const pagesConfig = {

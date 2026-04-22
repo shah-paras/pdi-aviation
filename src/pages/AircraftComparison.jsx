@@ -17,10 +17,15 @@ import AircraftSelector from '@/components/comparison/AircraftSelector';
 import ComparisonTable from '@/components/comparison/ComparisonTable';
 import { useCurrency } from '@/hooks/use-currency';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
-import aircraftModels from '@/data/aircraftModels';
+import { useAircraftModels } from '@/hooks/useAircraftModels';
+import FeatureGate from '@/components/auth/FeatureGate';
+import { useTierLimits } from '@/hooks/useTierLimits';
 
 export default function AircraftComparison() {
   const { formatPrice, formatNumber, currencySymbol, convertAmount } = useCurrency();
+  const { data: aircraftModels = [], isLoading: modelsLoading } = useAircraftModels();
+  const { limits } = useTierLimits();
+
   const [selectedCategories, setSelectedCategories] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pdi-comparison-categories')) || ['', '', '']; }
     catch { return ['', '', '']; }
@@ -35,13 +40,13 @@ export default function AircraftComparison() {
 
   const [searchParams] = useSearchParams();
 
-  const isLoading = false;
+  const isLoading = modelsLoading;
   // Filter to comparable aircraft types (jets, turboprops, VIP airliners)
   const aircraft = useMemo(() =>
     aircraftModels.filter(a =>
       a.type === 'FW' && a.max_range_nm && a.cruise_speed_ktas
     ),
-    []
+    [aircraftModels]
   );
 
   // Persist selections to localStorage
@@ -215,15 +220,29 @@ export default function AircraftComparison() {
                   Clear All
                 </button>
               )}
-              <Button
-                onClick={handleExportPDF}
-                disabled={activeSelections === 0}
-                size="sm"
-                className="bg-sky-600 hover:bg-sky-700 text-white"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Export PDF
-              </Button>
+              <FeatureGate requiredTier="enthusiast" feature="PDF export" mode="lock">
+                <Button
+                  onClick={handleExportPDF}
+                  disabled={activeSelections === 0}
+                  size="sm"
+                  className="bg-sky-600 hover:bg-sky-700 text-white"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export PDF
+                </Button>
+              </FeatureGate>
+              <FeatureGate requiredTier="insider" feature="Save comparisons" mode="lock">
+                <Button
+                  onClick={() => setSaveDialogOpen(true)}
+                  disabled={activeSelections === 0}
+                  size="sm"
+                  variant="outline"
+                  className="border-slate-700 text-slate-300 hover:bg-white/5"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Save
+                </Button>
+              </FeatureGate>
               <CurrencySwitcher />
             </div>
           </div>
@@ -238,18 +257,35 @@ export default function AircraftComparison() {
               <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
           ) : (
-            [0, 1, 2].map(index => (
-              <AircraftSelector
-                key={index}
-                index={index}
-                selectedCategory={selectedCategories[index]}
-                selectedAircraft={selectedAircraft[index]}
-                aircraft={aircraft}
-                onCategoryChange={(value) => handleCategoryChange(index, value)}
-                onAircraftChange={(value) => handleAircraftChange(index, value)}
-                onClear={() => handleClear(index)}
-              />
-            ))
+            [0, 1, 2].map(index => {
+              if (index >= limits.comparisonSlots) {
+                return (
+                  <FeatureGate key={index} requiredTier="enthusiast" feature="3rd comparison slot" mode="lock">
+                    <AircraftSelector
+                      index={index}
+                      selectedCategory={selectedCategories[index]}
+                      selectedAircraft={selectedAircraft[index]}
+                      aircraft={aircraft}
+                      onCategoryChange={(value) => handleCategoryChange(index, value)}
+                      onAircraftChange={(value) => handleAircraftChange(index, value)}
+                      onClear={() => handleClear(index)}
+                    />
+                  </FeatureGate>
+                );
+              }
+              return (
+                <AircraftSelector
+                  key={index}
+                  index={index}
+                  selectedCategory={selectedCategories[index]}
+                  selectedAircraft={selectedAircraft[index]}
+                  aircraft={aircraft}
+                  onCategoryChange={(value) => handleCategoryChange(index, value)}
+                  onAircraftChange={(value) => handleAircraftChange(index, value)}
+                  onClear={() => handleClear(index)}
+                />
+              );
+            })
           )}
         </div>
 
