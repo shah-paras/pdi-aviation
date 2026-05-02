@@ -25,7 +25,13 @@ const defaultValues = {
   insurancePerYear: 50000,
   hangarPerYear: 48000,
   crewPerYear: 200000,
-  managementPerYear: 36000
+  managementPerYear: 36000,
+  tripDistanceNm: 0,
+  fuelCapacityGallons: 0,
+  landingFeesPerTrip: 2000,
+  tripsPerYear: 50,
+  cateringPerYear: 15000,
+  cruiseSpeedKtas: 450,
 };
 
 export default function FinanceCalculator() {
@@ -65,6 +71,14 @@ export default function FinanceCalculator() {
     const totalAnnualCost = annualFuelCost + annualMaintenanceCost + annualFixedCosts;
     const costPerHour = totalAnnualCost / values.annualHours;
 
+    // Extended operating costs
+    const landingFeesAnnual = values.landingFeesPerTrip * values.tripsPerYear;
+    const totalAnnualCostUpdated = annualFuelCost + annualMaintenanceCost + annualFixedCosts + landingFeesAnnual + values.cateringPerYear;
+    const maxRangeOnFuel = values.fuelCapacityGallons > 0 && values.fuelBurnGPH > 0
+      ? Math.round((values.fuelCapacityGallons / values.fuelBurnGPH) * values.cruiseSpeedKtas)
+      : null;
+    const costPerHourUpdated = totalAnnualCostUpdated / values.annualHours;
+
     // Amortization schedule
     let balance = loanAmount;
     const schedule = [];
@@ -93,7 +107,11 @@ export default function FinanceCalculator() {
       totalAnnualCost,
       costPerHour,
       schedule,
-      residualValue
+      residualValue,
+      landingFeesAnnual,
+      maxRangeOnFuel,
+      totalAnnualCostUpdated,
+      costPerHourUpdated,
     };
   }, [values]);
 

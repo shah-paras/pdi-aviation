@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 /**
- * @param {'enthusiast'|'insider'|'superfan'} requiredTier
+ * @param {'enthusiast'|'insider'} requiredTier
  * @param {React.ReactNode} children - gated content
  * @param {React.ReactNode} [fallback] - optional custom fallback
  * @param {string} [feature] - label for upgrade prompt
@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom';
 export default function FeatureGate({ requiredTier, children, fallback, feature, mode = 'lock' }) {
   const { tier, isLoading } = useSubscription();
 
+  if (import.meta.env.VITE_DEV_UNLOCK === 'true') return children;
   if (isLoading) return null;
   if (hasAccess(tier, requiredTier)) return children;
   if (fallback) return fallback;

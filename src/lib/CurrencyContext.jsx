@@ -18,23 +18,32 @@ export function CurrencyProvider({ children }) {
     try { localStorage.setItem(STORAGE_KEY, code); } catch {}
   }, []);
 
+  const cachedRates = useMemo(() => {
+    try {
+      const stored = localStorage.getItem('pdi-exchange-rates');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return FALLBACK_RATES;
+  }, []);
+
   const { data: ratesData, isLoading: ratesLoading } = useQuery({
     queryKey: ['exchange-rates'],
     queryFn: async () => {
       const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
       if (!res.ok) throw new Error('Failed to fetch rates');
       const data = await res.json();
+      try { localStorage.setItem('pdi-exchange-rates', JSON.stringify(data.rates)); } catch {}
       return data.rates;
     },
-    staleTime: 60 * 60 * 1000,
+    staleTime: 2 * 60 * 60 * 1000,
     gcTime: 24 * 60 * 60 * 1000,
-    refetchInterval: 60 * 60 * 1000,
-    placeholderData: FALLBACK_RATES,
-    retry: 2,
+    refetchInterval: 2 * 60 * 60 * 1000,
+    placeholderData: cachedRates,
+    retry: 3,
   });
 
-  const rates = ratesData || FALLBACK_RATES;
-  const usingFallback = !ratesData || ratesData === FALLBACK_RATES;
+  const rates = ratesData || cachedRates;
+  const usingFallback = !ratesData;
 
   const convertAmount = useCallback((amountInUSD) => {
     const rate = rates[selectedCurrency] || 1;

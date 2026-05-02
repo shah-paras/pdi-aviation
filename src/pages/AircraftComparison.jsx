@@ -259,8 +259,9 @@ export default function AircraftComparison() {
           ) : (
             [0, 1, 2].map(index => {
               if (index >= limits.comparisonSlots) {
+                const requiredTier = index >= 2 ? 'insider' : 'enthusiast';
                 return (
-                  <FeatureGate key={index} requiredTier="enthusiast" feature="3rd comparison slot" mode="lock">
+                  <FeatureGate key={index} requiredTier={requiredTier} feature={`Comparison slot ${index + 1}`} mode="lock">
                     <AircraftSelector
                       index={index}
                       selectedCategory={selectedCategories[index]}

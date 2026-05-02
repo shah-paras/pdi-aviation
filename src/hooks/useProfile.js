@@ -10,10 +10,11 @@ export function useProfile() {
     queryKey: ['profile', user?.id],
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, country')
         .eq('id', user.id)
         .single();
       if (error) throw error;

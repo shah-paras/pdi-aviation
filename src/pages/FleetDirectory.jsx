@@ -8,7 +8,6 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useOperators } from '@/hooks/useOperators';
 import { Loader2 } from 'lucide-react';
 
-import FeatureGate from '@/components/auth/FeatureGate';
 import FleetHero from '@/components/fleet/FleetHero';
 import FleetDirectoryStats from '@/components/fleet/FleetDirectoryStats';
 import CategoryTabs from '@/components/fleet/CategoryTabs';
@@ -23,6 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationLink,
+  PaginationEllipsis,
+} from '@/components/ui/pagination';
 
 /* ------------------------------------------------------------------ */
 /* Sort comparators                                                    */
@@ -64,6 +72,20 @@ function ensureFadeStyle() {
     }
   `;
   document.head.appendChild(style);
+}
+
+const PAGE_SIZE = 24;
+
+function generatePageNumbers(current, total) {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages = [1];
+  if (current > 3) pages.push('ellipsis');
+  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+    pages.push(i);
+  }
+  if (current < total - 2) pages.push('ellipsis');
+  pages.push(total);
+  return pages;
 }
 
 /* ------------------------------------------------------------------ */
@@ -123,7 +145,9 @@ export default function FleetDirectory() {
   const [selectedState, setSelectedState] = useState('all');
   const [sortBy, setSortBy] = useState('name-asc');
   const [modalOperator, setModalOperator] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const debounceRef = useRef(null);
+  const gridRef = useRef(null);
 
   // Inject CSS animation keyframes
   useEffect(() => {
@@ -180,6 +204,22 @@ export default function FleetDirectory() {
     return [...list].sort(sortComparator(sortBy));
   }, [debouncedSearch, activeType, selectedState, sortBy]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, activeType, selectedState, sortBy]);
+
+  useEffect(() => {
+    if (currentPage > 1 && gridRef.current) {
+      gridRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [currentPage]);
+
+  const totalPages = Math.ceil(filteredOperators.length / PAGE_SIZE);
+  const paginatedOperators = useMemo(
+    () => filteredOperators.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filteredOperators, currentPage],
+  );
+
   const clearFilters = () => {
     setSearch('');
     setDebouncedSearch('');
@@ -217,71 +257,111 @@ export default function FleetDirectory() {
         <FleetDirectoryStats operators={operators} registrations={registrations} />
       </div>
 
-      {/* Type tabs + toolbar — gated for enthusiast+ */}
-      <FeatureGate requiredTier="enthusiast" feature="Search & filter" mode="blur">
-        <CategoryTabs
-          tabs={TYPE_TABS}
-          activeTab={activeType}
-          onTabChange={setActiveType}
-        />
+      {/* Type tabs + toolbar */}
+      <CategoryTabs
+        tabs={TYPE_TABS}
+        activeTab={activeType}
+        onTabChange={setActiveType}
+      />
 
-        {/* Toolbar — stacks on mobile */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3">
-            <p className="text-sm text-slate-400">
-              Showing {filteredOperators.length} of {operators.length} operators
-            </p>
+      {/* Toolbar — stacks on mobile */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-3">
+          <p className="text-sm text-slate-400">
+            Showing {Math.min((currentPage - 1) * PAGE_SIZE + 1, filteredOperators.length)}–{Math.min(currentPage * PAGE_SIZE, filteredOperators.length)} of {filteredOperators.length} operators
+          </p>
 
-            <div className="flex items-center gap-3">
-              {/* State filter dropdown */}
-              <Select value={selectedState} onValueChange={setSelectedState}>
-                <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 flex-1 sm:flex-none sm:w-[160px]">
-                  <SelectValue placeholder="All States" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All States</SelectItem>
-                  {ALL_STATES.map((state) => (
-                    <SelectItem key={state} value={state}>
-                      {state}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="flex items-center gap-3">
+            {/* State filter dropdown */}
+            <Select value={selectedState} onValueChange={setSelectedState}>
+              <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 flex-1 sm:flex-none sm:w-[160px]">
+                <SelectValue placeholder="All States" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All States</SelectItem>
+                {ALL_STATES.map((state) => (
+                  <SelectItem key={state} value={state}>
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-              {/* Sort dropdown */}
-              <FleetToolbar
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-              />
-            </div>
+            {/* Sort dropdown */}
+            <FleetToolbar
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+            />
           </div>
         </div>
-      </FeatureGate>
+      </div>
 
       {/* Main content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+      <main ref={gridRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
 
-        {/* Operator grid — CSS animation instead of 137 motion.divs */}
+        {/* Operator grid — paginated, 24 cards per page */}
         {filteredOperators.length > 0 ? (
-          <div
-            key={`${activeType}-${selectedState}-${debouncedSearch}`}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
-          >
-            {filteredOperators.map((operator, index) => (
-              <div
-                key={operator.id}
-                className="fleet-card-animate"
-                style={{
-                  animationDelay: index < 12 ? `${index * 50}ms` : '0ms',
-                }}
-              >
-                <OperatorCard
-                  operator={operator}
-                  onViewFleet={handleViewFleet}
-                />
+          <>
+            <div
+              key={`${activeType}-${selectedState}-${debouncedSearch}-${currentPage}`}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+            >
+              {paginatedOperators.map((operator, index) => (
+                <div
+                  key={operator.id}
+                  className="fleet-card-animate"
+                  style={{
+                    animationDelay: index < 12 ? `${index * 50}ms` : '0ms',
+                  }}
+                >
+                  <OperatorCard
+                    operator={operator}
+                    onViewFleet={handleViewFleet}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50 text-slate-500' : 'cursor-pointer text-slate-400 hover:text-white'}
+                      />
+                    </PaginationItem>
+                    {generatePageNumbers(currentPage, totalPages).map((page, i) =>
+                      page === 'ellipsis' ? (
+                        <PaginationItem key={`ellipsis-${i}`}>
+                          <PaginationEllipsis className="text-slate-500" />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            isActive={page === currentPage}
+                            onClick={() => setCurrentPage(page)}
+                            className={page === currentPage
+                              ? 'cursor-pointer bg-sky-500/20 text-sky-400 border-sky-500/30'
+                              : 'cursor-pointer text-slate-400 hover:text-white'}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ),
+                    )}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50 text-slate-500' : 'cursor-pointer text-slate-400 hover:text-white'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <EmptyState onClearFilters={clearFilters} />
         )}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, Loader2, Sparkles, X } from 'lucide-react';
+import { Check, Loader2, Lock, Sparkles, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useSubscription } from '@/lib/auth/useSubscription';
 import { supabase } from '@/lib/supabase';
@@ -9,9 +9,8 @@ import { TIERS, TIER_ORDER, COMPARISON_ROWS, FAQS } from '@/config/tiers';
 
 // ─── USD prices for non-India users ────────────────────────────────────────
 const USD_PRICES = {
-  enthusiast: { monthly: 2.49, annual: 24.90 },
+  enthusiast: { monthly: 3.49, annual: 34.90 },
   insider:    { monthly: 5.99, annual: 59.90 },
-  superfan:   { monthly: 11.99, annual: 119.90 },
 };
 
 // ─── Country detection ─────────────────────────────────────────────────────
@@ -127,11 +126,18 @@ function PricingCard({ tierId, tier, billing, country, currentTier, onSubscribe,
                 item.active ? 'text-slate-400' : 'text-slate-600 line-through opacity-40'
               }`}
             >
-              <span
-                className="w-[5px] h-[5px] rounded-full shrink-0 mt-[5px]"
-                style={{ background: item.active ? tier.dotColor : '#334466' }}
-              />
-              {item.text}
+              {item.active ? (
+                <span
+                  className="w-[5px] h-[5px] rounded-full shrink-0 mt-[5px]"
+                  style={{ background: tier.dotColor }}
+                />
+              ) : (
+                <Lock className="w-3 h-3 text-slate-600 shrink-0 mt-[3px]" />
+              )}
+              <span className="flex-1">{item.text}</span>
+              {item.isNew && (
+                <span className="text-[10px] text-violet-400 font-semibold shrink-0">◈</span>
+              )}
             </div>
           ))}
         </div>
@@ -301,7 +307,7 @@ export default function Pricing() {
           variants={stagger}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-20"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-20"
         >
           {TIER_ORDER.map((id) => (
             <PricingCard
@@ -347,7 +353,7 @@ export default function Pricing() {
                   row.section ? (
                     <tr key={i}>
                       <td
-                        colSpan={5}
+                        colSpan={4}
                         className="px-4 pt-4 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-slate-600 bg-white/[0.01]"
                       >
                         {row.section}

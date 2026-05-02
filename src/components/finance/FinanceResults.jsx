@@ -18,7 +18,11 @@ export default function FinanceResults({ values, calculations }) {
     annualMaintenanceCost,
     annualFixedCosts,
     totalAnnualCost,
-    costPerHour
+    costPerHour,
+    landingFeesAnnual,
+    maxRangeOnFuel,
+    totalAnnualCostUpdated,
+    costPerHourUpdated,
   } = calculations;
 
   const statCards = [
@@ -38,14 +42,14 @@ export default function FinanceResults({ values, calculations }) {
     },
     {
       label: 'Annual Operating Cost',
-      value: formatCurrency(totalAnnualCost),
+      value: formatCurrency(totalAnnualCostUpdated),
       icon: DollarSign,
       color: 'from-sky-500 to-sky-600',
       bgColor: 'bg-sky-500/10'
     },
     {
       label: 'Cost Per Hour',
-      value: formatCurrency(costPerHour),
+      value: formatCurrency(costPerHourUpdated),
       icon: Clock,
       color: 'from-emerald-500 to-emerald-600',
       bgColor: 'bg-emerald-500/10'
@@ -58,17 +62,17 @@ export default function FinanceResults({ values, calculations }) {
       <div className="grid grid-cols-3 gap-3">
         <Card className="p-3 text-center bg-white/5 backdrop-blur-sm border-white/10">
           <p className="text-sm text-slate-400 mb-1">Cost Per Flight Hour</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(costPerHour)}</p>
+          <p className="text-xl font-bold text-white">{formatCurrency(costPerHourUpdated)}</p>
           <Badge className="mt-2 bg-slate-700 text-slate-300">Variable + Fixed</Badge>
         </Card>
         <Card className="p-3 text-center bg-blue-500/10 border-blue-500/20">
           <p className="text-sm text-slate-400 mb-1">5-Year Total Cost</p>
-          <p className="text-xl font-bold text-sky-400">{formatCurrency((totalAnnualCost + monthlyPayment * 12) * 5)}</p>
+          <p className="text-xl font-bold text-sky-400">{formatCurrency((totalAnnualCostUpdated + monthlyPayment * 12) * 5)}</p>
           <Badge className="mt-2 bg-blue-500/20 text-blue-300">Ownership</Badge>
         </Card>
         <Card className="p-3 text-center bg-emerald-500/10 border-emerald-500/20">
           <p className="text-sm text-slate-400 mb-1">Monthly Outflow</p>
-          <p className="text-xl font-bold text-emerald-400">{formatCurrency((totalAnnualCost / 12) + monthlyPayment)}</p>
+          <p className="text-xl font-bold text-emerald-400">{formatCurrency((totalAnnualCostUpdated / 12) + monthlyPayment)}</p>
           <Badge className="mt-2 bg-emerald-500/20 text-emerald-300">Cash Flow</Badge>
         </Card>
       </div>
@@ -96,6 +100,26 @@ export default function FinanceResults({ values, calculations }) {
           </motion.div>
         ))}
       </div>
+
+      {values.tripDistanceNm > 0 && maxRangeOnFuel != null && (
+        <div className={`rounded-xl p-4 border flex items-start gap-3 ${
+          values.tripDistanceNm <= maxRangeOnFuel
+            ? 'bg-emerald-500/10 border-emerald-500/30'
+            : 'bg-red-500/10 border-red-500/30'
+        }`}>
+          <span className="text-lg">{values.tripDistanceNm <= maxRangeOnFuel ? '✓' : '⚠'}</span>
+          <div>
+            <div className={`text-sm font-medium ${values.tripDistanceNm <= maxRangeOnFuel ? 'text-emerald-400' : 'text-red-400'}`}>
+              {values.tripDistanceNm <= maxRangeOnFuel
+                ? `Single-tank trip viable — fuel range: ${maxRangeOnFuel.toLocaleString()} nm`
+                : `Fuel stop required — max fuel range ${maxRangeOnFuel.toLocaleString()} nm < trip ${values.tripDistanceNm.toLocaleString()} nm`}
+            </div>
+            <div className="text-xs text-slate-500 mt-0.5">
+              Based on {values.fuelCapacityGallons} gal capacity at {values.fuelBurnGPH} gal/hr, {values.cruiseSpeedKtas} kt
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Loan Summary */}
@@ -174,12 +198,20 @@ export default function FinanceResults({ values, calculations }) {
                 <span className="font-medium text-white">{formatCurrency(values.managementPerYear)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Catering</span>
+                <span className="font-medium text-white">{formatCurrency(values.cateringPerYear)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
+                <span className="text-slate-300">Landing Fees</span>
+                <span className="font-medium text-white">{formatCurrency(landingFeesAnnual)}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-white/5">
                 <span className="text-slate-300">Annual Loan Payments</span>
                 <span className="font-medium text-white">{formatCurrency(monthlyPayment * 12)}</span>
               </div>
               <div className="flex justify-between py-2 bg-sky-500/20 text-white -mx-5 px-5 rounded-lg">
                 <span className="font-semibold">Total Annual Cost</span>
-                <span className="font-bold">{formatCurrency(totalAnnualCost + monthlyPayment * 12)}</span>
+                <span className="font-bold">{formatCurrency(totalAnnualCostUpdated + monthlyPayment * 12)}</span>
               </div>
             </div>
           </div>

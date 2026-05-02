@@ -224,6 +224,41 @@ export default function FinanceInputs({ values, onChange }) {
               className="bg-slate-900 border-slate-800 text-slate-200"
             />
           </div>
+          <div>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Fuel Capacity (gal)</Label>
+            <Input
+              type="number"
+              step="10"
+              min="0"
+              placeholder="0 = skip fuel check"
+              value={values.fuelCapacityGallons}
+              onChange={(e) => handleChange('fuelCapacityGallons', Number(e.target.value))}
+              className="bg-slate-900 border-slate-800 text-slate-200"
+            />
+          </div>
+          <div>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Cruise Speed (kt)</Label>
+            <Input
+              type="number"
+              step="10"
+              min="100"
+              value={values.cruiseSpeedKtas}
+              onChange={(e) => handleChange('cruiseSpeedKtas', Number(e.target.value))}
+              className="bg-slate-900 border-slate-800 text-slate-200"
+            />
+          </div>
+          <div>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Typical Trip Distance (nm)</Label>
+            <Input
+              type="number"
+              step="50"
+              min="0"
+              placeholder="0 = skip range check"
+              value={values.tripDistanceNm}
+              onChange={(e) => handleChange('tripDistanceNm', Number(e.target.value))}
+              className="bg-slate-900 border-slate-800 text-slate-200"
+            />
+          </div>
         </div>
       </div>
 
@@ -291,6 +326,55 @@ export default function FinanceInputs({ values, onChange }) {
               />
             </div>
           </div>
+          <div>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Catering ({currencySymbol}/year)</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
+              <Input
+                type="text"
+                inputMode="decimal"
+                value={rawInputs.cateringPerYear !== undefined ? rawInputs.cateringPerYear : formatCurrency(values.cateringPerYear)}
+                onChange={(e) => handleCurrencyInput('cateringPerYear', e.target.value)}
+                onBlur={() => clearRawInput('cateringPerYear')}
+                className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Landing Fees — full-width row */}
+        <div className="mt-4">
+          <Label className="text-sm text-slate-300 mb-1.5 block">Landing Fees</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-slate-400 mb-1 block">Per Trip ({currencySymbol})</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={rawInputs.landingFeesPerTrip !== undefined ? rawInputs.landingFeesPerTrip : formatCurrency(values.landingFeesPerTrip)}
+                  onChange={(e) => handleCurrencyInput('landingFeesPerTrip', e.target.value)}
+                  onBlur={() => clearRawInput('landingFeesPerTrip')}
+                  className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-400 mb-1 block">Trips/yr</Label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={values.tripsPerYear}
+                onChange={(e) => handleChange('tripsPerYear', Number(e.target.value))}
+                className="bg-slate-900 border-slate-800 text-slate-200"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 mt-1.5">
+            Annual total: {currencySymbol}{formatCurrency(values.landingFeesPerTrip * values.tripsPerYear)}
+          </p>
         </div>
       </div>
     </div>
