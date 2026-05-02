@@ -15,7 +15,7 @@ export const createCircleGeoJSON = (
   const angularDist = radiusKm / earthRadius; // angular distance in radians
 
   let prevLng = null;
-  for (let i = 0; i <= points; i++) {
+  for (let i = 0; i < points; i++) {
     const bearing = (i / points) * 2 * Math.PI;
 
     // Spherical law of cosines — accurate for any range up to half the globe
@@ -39,6 +39,9 @@ export const createCircleGeoJSON = (
 
     coords.push([lngDeg, latDeg]);
   }
+
+  // Close the ring exactly to prevent seam artifacts
+  coords.push([coords[0][0], coords[0][1]]);
 
   return {
     type: "Feature",
@@ -78,18 +81,23 @@ export const createOutsideOverlayGeoJSON = (centerLng, centerLat, radiusKm, poin
   const lngs = circleCoords.map(c => c[0]);
   const minLng = Math.min(-180, Math.min(...lngs) - 10);
   const maxLng = Math.max(180, Math.max(...lngs) + 10);
+  // Outer ring: counter-clockwise (GeoJSON exterior winding)
   const outerRing = [
     [minLng, -89.9], [maxLng, -89.9],
     [maxLng, 89.9], [minLng, 89.9],
     [minLng, -89.9],
   ];
 
+  // Hole ring: must be opposite winding to outer ring.
+  // createCircleGeoJSON generates clockwise coords — reverse for the hole.
+  const holeCoords = [...circleCoords].reverse();
+
   return {
     type: "Feature",
     properties: {},
     geometry: {
       type: "Polygon",
-      coordinates: [outerRing, circleCoords],
+      coordinates: [outerRing, holeCoords],
     },
   };
 };

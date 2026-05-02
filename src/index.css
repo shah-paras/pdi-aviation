@@ -27,6 +27,16 @@
   100% { transform: scale(1.5); opacity: 0; }
 }
 
+.out-of-range-popup .mapboxgl-popup-content {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+.out-of-range-popup .mapboxgl-popup-tip {
+  border-top-color: rgba(239, 68, 68, 0.5);
+}
+
 @layer base {
   :root {
     --background: 222 47% 5%;
