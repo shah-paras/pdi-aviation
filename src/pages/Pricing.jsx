@@ -183,12 +183,12 @@ export default function Pricing() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
 
-  // Redirect if already subscribed
+  // Redirect only if on highest tier — lower tiers can still upgrade
   useEffect(() => {
-    if (isActive) {
+    if (isActive && currentTier === 'insider') {
       navigate(decodeURIComponent(next), { replace: true });
     }
-  }, [isActive, navigate, next]);
+  }, [isActive, currentTier, navigate, next]);
 
   // ── handleSubscribe (now accepts tier) ─────────────────────────────────
   const handleSubscribe = async (selectedTier) => {

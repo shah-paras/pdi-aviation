@@ -72,15 +72,8 @@ export default function Layout({ children }) {
               ))}
             </nav>
 
-            {/* CTA + account */}
+            {/* Account menu */}
             <div className="hidden lg:flex items-center gap-3">
-              <Link
-                to={createPageUrl('ContactSales')}
-                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-semibold text-sm transition-colors shadow-md flex items-center gap-1.5"
-              >
-                <Phone className="w-4 h-4" />
-                Contact Sales
-              </Link>
               <AccountMenu variant="desktop" />
             </div>
 
@@ -118,13 +111,6 @@ export default function Layout({ children }) {
                     {item.name}
                   </Link>
                 ))}
-                <Link
-                  to={createPageUrl('ContactSales')}
-                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-sky-500 text-white rounded-lg font-semibold text-sm mt-4"
-                >
-                  <Phone className="w-4 h-4" />
-                  Contact Sales
-                </Link>
                 <AccountMenu variant="mobile" />
               </div>
             </motion.div>
