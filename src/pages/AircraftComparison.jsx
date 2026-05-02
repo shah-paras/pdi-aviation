@@ -20,11 +20,13 @@ import CurrencySwitcher from '@/components/CurrencySwitcher';
 import { useAircraftModels } from '@/hooks/useAircraftModels';
 import FeatureGate from '@/components/auth/FeatureGate';
 import { useTierLimits } from '@/hooks/useTierLimits';
+import { hasAccess } from '@/config/tiers';
+import { Lock } from 'lucide-react';
 
 export default function AircraftComparison() {
   const { formatPrice, formatNumber, currencySymbol, convertAmount } = useCurrency();
   const { data: aircraftModels = [], isLoading: modelsLoading } = useAircraftModels();
-  const { limits } = useTierLimits();
+  const { limits, tier: userTier } = useTierLimits();
 
   const [selectedCategories, setSelectedCategories] = useState(() => {
     try { return JSON.parse(localStorage.getItem('pdi-comparison-categories')) || ['', '', '']; }
@@ -196,64 +198,22 @@ export default function AircraftComparison() {
   const activeSelections = selectedAircraft.filter(Boolean).length;
 
   return (
-    <div className="h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)] bg-slate-950 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-slate-950 border-b border-slate-800 text-white py-3 flex-shrink-0">
-        <div className="px-6">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                <BarChart3 className="w-4 h-4 text-sky-400" />
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold leading-tight">Aircraft Comparison</h1>
-                <p className="text-xs text-slate-500 hidden sm:block">Compare up to 3 aircraft side-by-side</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              {activeSelections > 0 && (
-                <button
-                  onClick={handleClearAll}
-                  className="text-xs text-slate-400 hover:text-slate-300 flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/5"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  Clear All
-                </button>
-              )}
-              <FeatureGate requiredTier="enthusiast" feature="PDF export" mode="lock">
-                <Button
-                  onClick={handleExportPDF}
-                  disabled={activeSelections === 0}
-                  size="sm"
-                  className="bg-sky-600 hover:bg-sky-700 text-white"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Export PDF
-                </Button>
-              </FeatureGate>
-              <FeatureGate requiredTier="insider" feature="Save comparisons" mode="lock">
-                <Button
-                  onClick={() => setSaveDialogOpen(true)}
-                  disabled={activeSelections === 0}
-                  size="sm"
-                  variant="outline"
-                  className="border-slate-700 text-slate-300 hover:bg-white/5"
-                >
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
-              </FeatureGate>
-              <CurrencySwitcher />
-            </div>
+    <div className="h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)] bg-slate-950 flex flex-col lg:flex-row overflow-hidden">
+      {/* ── Left Sidebar ── */}
+      <div className="lg:w-80 xl:w-96 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800 flex-shrink-0 overflow-y-auto max-h-[40vh] lg:max-h-full">
+        {/* Sidebar header */}
+        <div className="p-4 border-b border-slate-800">
+          <div className="flex items-center gap-2.5 mb-1">
+            <BarChart3 className="w-4 h-4 text-sky-400" />
+            <h1 className="text-lg font-semibold text-white">Aircraft Comparison</h1>
           </div>
+          <p className="text-xs text-slate-500">Compare up to 3 aircraft side-by-side</p>
         </div>
-      </div>
 
-      <div className="px-6 py-3 flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
-        {/* Selector strip — horizontal 3-col grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-shrink-0">
+        {/* Aircraft selectors */}
+        <div className="p-4 space-y-3">
           {isLoading ? (
-            <div className="col-span-full flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
             </div>
           ) : (
@@ -261,7 +221,7 @@ export default function AircraftComparison() {
               if (index >= limits.comparisonSlots) {
                 const requiredTier = index >= 2 ? 'insider' : 'enthusiast';
                 return (
-                  <FeatureGate key={index} requiredTier={requiredTier} feature={`Comparison slot ${index + 1}`} mode="lock">
+                  <FeatureGate key={index} requiredTier={requiredTier} feature={`Slot ${index + 1}`} mode="lock">
                     <AircraftSelector
                       index={index}
                       selectedCategory={selectedCategories[index]}
@@ -290,8 +250,64 @@ export default function AircraftComparison() {
           )}
         </div>
 
-        {/* Comparison table — takes remaining height, full width */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+      </div>
+
+      {/* ── Right Main Panel — Comparison Results ── */}
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-5 py-2.5 border-b border-slate-800 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            {activeSelections > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="text-xs text-slate-400 hover:text-slate-300 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-white/5"
+              >
+                <RefreshCw className="w-3 h-3" />
+                Clear All
+              </button>
+            )}
+            <Button
+              onClick={hasAccess(userTier, 'enthusiast') ? handleExportPDF : undefined}
+              disabled={!hasAccess(userTier, 'enthusiast') || activeSelections === 0}
+              size="sm"
+              className="bg-sky-600 hover:bg-sky-700 text-white text-xs disabled:opacity-40"
+              title={!hasAccess(userTier, 'enthusiast') ? 'Requires Enthusiast tier' : undefined}
+            >
+              {!hasAccess(userTier, 'enthusiast') && <Lock className="w-3 h-3 mr-1" />}
+              <FileText className="w-3.5 h-3.5 mr-1.5" />
+              Export PDF
+            </Button>
+            <div className="relative group/save">
+              <Button
+                onClick={hasAccess(userTier, 'insider') ? () => setSaveDialogOpen(true) : undefined}
+                disabled={!hasAccess(userTier, 'insider') || activeSelections === 0}
+                size="sm"
+                variant="outline"
+                className="border-slate-700 text-slate-300 hover:bg-white/5 text-xs disabled:opacity-40"
+              >
+                {!hasAccess(userTier, 'insider') && <Lock className="w-3 h-3 mr-1" />}
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+                Save
+              </Button>
+              {!hasAccess(userTier, 'insider') && (
+                <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 pt-1 opacity-0 pointer-events-none group-hover/save:opacity-100 group-hover/save:pointer-events-auto transition-opacity duration-150">
+                  <div className="px-3 py-1.5 rounded-md bg-slate-800 border border-white/10 shadow-lg whitespace-nowrap">
+                    <span className="flex items-center gap-1.5 text-xs text-slate-300">
+                      <Lock className="w-3 h-3 text-slate-500" />
+                      Requires <span className="text-violet-400">Insider</span>
+                      <span className="text-slate-600">·</span>
+                      <a href="/Pricing" className="text-sky-400 hover:text-sky-300">Upgrade &rarr;</a>
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          <CurrencySwitcher />
+        </div>
+
+        {/* Comparison table */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <ComparisonTable
             selectedAircraft={selectedAircraft}
             aircraft={aircraft}

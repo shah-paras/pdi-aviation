@@ -36,24 +36,27 @@ export default function FeatureGate({ requiredTier, children, fallback, feature,
     );
   }
 
-  // mode === 'lock' (default) — show disabled content with tooltip on hover
+  // mode === 'lock' (default) — dimmed content with lock badge + centered hover tooltip
   const tierName = TIERS[requiredTier]?.name || requiredTier;
+  const tierColor = TIER_COLORS[requiredTier]?.text || 'text-sky-400';
   return (
-    <div className="relative group/gate">
+    <div className="relative group/gate cursor-default">
       <div className="opacity-40 pointer-events-none select-none" aria-disabled="true">{children}</div>
-      <div
-        className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 rounded-md
-          bg-slate-800 border border-white/10 shadow-lg
-          opacity-0 pointer-events-none group-hover/gate:opacity-100 group-hover/gate:pointer-events-auto
-          transition-opacity duration-150 whitespace-nowrap text-center"
-      >
-        <span className="flex items-center gap-1.5 text-xs text-slate-300">
-          <Lock className="w-3 h-3 text-slate-500" />
-          Requires <span className={TIER_COLORS[requiredTier]?.text || 'text-sky-400'}>{tierName}</span>
-          <span className="text-slate-600 mx-1">·</span>
-          <Link to="/Pricing" className="text-sky-400 hover:text-sky-300">Upgrade</Link>
-        </span>
+      <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-800/90 border border-white/10 text-[10px] text-slate-400">
+        <Lock className="w-2.5 h-2.5" />
+        <span className={tierColor}>{tierName}</span>
       </div>
+      <Link
+        to="/Pricing"
+        className="absolute inset-0 z-10 flex items-center justify-center opacity-0 group-hover/gate:opacity-100 transition-opacity duration-150"
+      >
+        <span className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800/95 border border-white/10 shadow-xl text-xs text-slate-300 backdrop-blur-sm">
+          <Lock className="w-3 h-3 text-slate-500" />
+          Requires <span className={tierColor}>{tierName}</span>
+          <span className="text-slate-600">·</span>
+          <span className="text-sky-400">Upgrade &rarr;</span>
+        </span>
+      </Link>
     </div>
   );
 }
