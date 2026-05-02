@@ -202,7 +202,7 @@ export default function FleetDirectory() {
     }
 
     return [...list].sort(sortComparator(sortBy));
-  }, [debouncedSearch, activeType, selectedState, sortBy]);
+  }, [operators, debouncedSearch, activeType, selectedState, sortBy]);
 
   useEffect(() => {
     setCurrentPage(1);
