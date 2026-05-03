@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth/AuthProvider';
+import { useDevTier } from '@/lib/auth/DevTierContext';
 
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 
 export function useSubscription() {
   const { user, loading: authLoading } = useAuth();
+  const devCtx = useDevTier();
 
   const query = useQuery({
     queryKey: ['subscription', user?.id ?? null],
@@ -24,11 +26,12 @@ export function useSubscription() {
 
   const subscription = query.data ?? null;
   const isActive = !!subscription && ACTIVE_STATUSES.has(subscription.status);
-  const tier = (isActive && subscription?.tier) || 'curious';
+  const realTier = (isActive && subscription?.tier) || 'curious';
+  const tier = devCtx?.devTier || realTier;
 
   return {
     subscription,
-    isActive,
+    isActive: devCtx?.devTier ? true : isActive,
     tier,
     isLoading: authLoading || query.isLoading,
     error: query.error,

@@ -5,6 +5,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { CurrencyProvider } from '@/lib/CurrencyContext'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
+import { DevTierProvider } from '@/lib/auth/DevTierContext'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig, LAZY_PAGES, GATED_PAGES } from './pages.config'
@@ -74,10 +75,12 @@ function App() {
     <QueryClientProvider client={queryClientInstance}>
       <CurrencyProvider>
         <Router>
-          <AuthProvider>
-            <NavigationTracker />
-            <AppRoutes />
-          </AuthProvider>
+          <DevTierProvider>
+            <AuthProvider>
+              <NavigationTracker />
+              <AppRoutes />
+            </AuthProvider>
+          </DevTierProvider>
         </Router>
         <Toaster />
       </CurrencyProvider>

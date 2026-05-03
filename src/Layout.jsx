@@ -3,10 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import {
   Menu, X,
-  BarChart3, Map, Calculator, BookOpen, Users, Phone, ClipboardList
+  BarChart3, Map, Calculator, BookOpen, Users, Phone, ClipboardList, CreditCard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AccountMenu from '@/components/auth/AccountMenu';
+import { useSubscription } from '@/lib/auth/useSubscription';
 
 
 export default function Layout({ children }) {
@@ -16,14 +17,25 @@ export default function Layout({ children }) {
   const showFooter = ['/', '/AboutUs'].includes(location.pathname);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 20);
+        ticking = false;
+      });
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location]);
+
+  const { tier } = useSubscription();
+  const isFree = tier === 'curious';
 
   const navItems = [
     { name: 'Compare Aircraft', href: 'AircraftComparison', icon: BarChart3 },
@@ -32,6 +44,7 @@ export default function Layout({ children }) {
     { name: 'Fleet Directory', href: 'FleetDirectory', icon: ClipboardList },
     { name: 'Blog', href: 'Blog', icon: BookOpen },
     { name: 'About Us', href: 'AboutUs', icon: Users },
+    ...(isFree ? [{ name: 'Pricing', href: 'Pricing', icon: CreditCard, highlight: true }] : []),
   ];
 
   const isActive = (href) => location.pathname.includes(href);

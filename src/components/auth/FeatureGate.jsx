@@ -1,4 +1,5 @@
 import { useSubscription } from '@/lib/auth/useSubscription';
+import { useDevTier } from '@/lib/auth/DevTierContext';
 import { hasAccess, TIERS, TIER_COLORS } from '@/config/tiers';
 import { Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,10 +11,11 @@ import { Link } from 'react-router-dom';
  * @param {string} [feature] - label for upgrade prompt
  * @param {'blur'|'lock'|'hide'} [mode='lock']
  */
-export default function FeatureGate({ requiredTier, children, fallback, feature, mode = 'lock' }) {
+export default function FeatureGate({ requiredTier, children, fallback, feature, mode = 'lock', className }) {
   const { tier, isLoading } = useSubscription();
+  const devCtx = useDevTier();
 
-  if (import.meta.env.VITE_DEV_UNLOCK === 'true') return children;
+  if (!devCtx?.devTier && import.meta.env.VITE_DEV_UNLOCK === 'true') return children;
   if (isLoading) return null;
   if (hasAccess(tier, requiredTier)) return children;
   if (fallback) return fallback;
@@ -21,7 +23,7 @@ export default function FeatureGate({ requiredTier, children, fallback, feature,
 
   if (mode === 'blur') {
     return (
-      <div className="relative">
+      <div className={`relative ${className || ''}`}>
         <div className="blur-sm pointer-events-none select-none">{children}</div>
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/60 rounded-xl backdrop-blur-sm">
           <Lock className="w-5 h-5 text-slate-400 mb-2" />

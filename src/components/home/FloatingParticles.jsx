@@ -33,7 +33,19 @@ export default function FloatingParticles({ count = 30 }) {
     }));
 
     let animId;
+    let visible = true;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visible = entry.isIntersecting;
+        if (visible && !animId) draw();
+      },
+      { threshold: 0 }
+    );
+    observer.observe(canvas);
+
     const draw = () => {
+      if (!visible) { animId = null; return; }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       particles.forEach((p) => {
         ctx.beginPath();
@@ -53,6 +65,7 @@ export default function FloatingParticles({ count = 30 }) {
     return () => {
       cancelAnimationFrame(animId);
       clearTimeout(resizeTimer);
+      observer.disconnect();
       window.removeEventListener('resize', debouncedResize);
     };
   }, [count, reduced]);

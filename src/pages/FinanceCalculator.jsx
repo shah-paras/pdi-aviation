@@ -262,16 +262,18 @@ export default function FinanceCalculator() {
         <div className="px-6 py-4 flex-1 min-h-0 overflow-hidden">
           <div className="flex flex-col lg:flex-row gap-4 h-full">
             {/* Left Panel - Inputs */}
-            <div className="lg:w-[300px] flex-shrink-0 overflow-y-auto min-h-0 scrollbar-thin">
-              <FeatureGate requiredTier="enthusiast" feature="Edit calculator inputs" mode="blur">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-white">Parameters</h2>
-                  <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
-                    <RefreshCw className="w-4 h-4 mr-1" />
-                    Reset
-                  </Button>
+            <div className="lg:w-[300px] flex-shrink-0 min-h-0">
+              <FeatureGate requiredTier="enthusiast" feature="Edit calculator inputs" mode="blur" className="h-full overflow-hidden">
+                <div className="h-full overflow-y-auto scrollbar-thin">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-white">Parameters</h2>
+                    <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
+                      <RefreshCw className="w-4 h-4 mr-1" />
+                      Reset
+                    </Button>
+                  </div>
+                  <FinanceInputs values={values} onChange={setValues} />
                 </div>
-                <FinanceInputs values={values} onChange={setValues} />
               </FeatureGate>
             </div>
 

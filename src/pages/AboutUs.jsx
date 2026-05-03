@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react';
 import {
-  Users, Target, Globe,
-  Shield, TrendingUp, Clock, MapPin, Phone, Mail
+  Users, Target,
+  MapPin, Phone, Mail
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import TeamGrid from '@/components/about/TeamGrid';
 import ContactForm from '@/components/about/ContactForm';
 import NumbersSection from '@/components/home/NumbersSection';
+import { IndependentAdviceIcon, MarketIntelligenceIcon, EndToEndIcon, GlobalNetworkIcon } from '@/components/about/MissionIcons';
 
 const PRESS_LOGOS = [
   { name: 'Economic Times', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/The_Economic_Times_logo.svg/1200px-The_Economic_Times_logo.svg.png' },
@@ -119,14 +120,14 @@ export default function AboutUs() {
 
               <div className="grid sm:grid-cols-2 gap-4">
                 {[
-                  { icon: Shield, title: 'Independent Advice', desc: 'Unbiased recommendations' },
-                  { icon: TrendingUp, title: 'Market Intelligence', desc: 'Real-time pricing data' },
-                  { icon: Clock, title: 'End-to-End Support', desc: 'Complete transaction guidance' },
-                  { icon: Globe, title: 'Global Network', desc: 'International connections' }
+                  { icon: IndependentAdviceIcon, title: 'Independent Advice', desc: 'Unbiased recommendations' },
+                  { icon: MarketIntelligenceIcon, title: 'Market Intelligence', desc: 'Real-time pricing data' },
+                  { icon: EndToEndIcon, title: 'End-to-End Support', desc: 'Complete transaction guidance' },
+                  { icon: GlobalNetworkIcon, title: 'Global Network', desc: 'International connections' }
                 ].map((item, i) => (
                   <div key={i} className="flex gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                      <item.icon className="w-5 h-5 text-sky-400" />
+                    <div className="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center flex-shrink-0">
+                      <item.icon className="w-6 h-6" />
                     </div>
                     <div>
                       <h4 className="font-medium text-white">{item.title}</h4>

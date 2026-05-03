@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { motion } from 'framer-motion';
 import {
-  Plane, BarChart3, Map, Calculator, BookOpen,
-  ArrowRight, Shield, Clock, TrendingUp, Users
+  Plane, ArrowRight, Shield, Clock, TrendingUp, Users
 } from 'lucide-react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import FloatingParticles from '@/components/home/FloatingParticles';
@@ -12,35 +11,36 @@ import TextShimmer from '@/components/home/TextShimmer';
 import MovingBorder from '@/components/home/MovingBorder';
 import NumbersSection from '@/components/home/NumbersSection';
 import { StaggerReveal, StaggerItem } from '@/components/home/StaggerReveal';
+import { ComparisonIcon, RangeMapIcon, FinanceIcon, InsightsIcon } from '@/components/home/ToolIcons';
 
 const features = [
   {
-    icon: BarChart3,
+    icon: ComparisonIcon,
     title: 'Aircraft Comparison',
     description: 'Compare up to 3 aircraft side-by-side with detailed specs, pricing, and performance metrics.',
     href: 'AircraftComparison',
-    color: 'from-blue-500 to-blue-600'
+    color: 'bg-[#3B4BF9]'
   },
   {
-    icon: Map,
+    icon: RangeMapIcon,
     title: 'Range Map',
     description: 'Visualize aircraft range with interactive maps, geodesic circles, and route planning.',
     href: 'RangeMap',
-    color: 'from-emerald-500 to-emerald-600'
+    color: 'bg-[#12B76A]'
   },
   {
-    icon: Calculator,
+    icon: FinanceIcon,
     title: 'Finance Calculator',
     description: 'Calculate acquisition costs, loan payments, and total cost of ownership scenarios.',
     href: 'FinanceCalculator',
-    color: 'from-purple-500 to-purple-600'
+    color: 'bg-[#9B51E0]'
   },
   {
-    icon: BookOpen,
+    icon: InsightsIcon,
     title: 'Aviation Insights',
     description: 'Stay informed with market analysis, buying guides, and industry news.',
     href: 'Blog',
-    color: 'from-amber-500 to-amber-600'
+    color: 'bg-[#F59E0B]'
   }
 ];
 
@@ -89,9 +89,9 @@ export default function Home() {
                 className="mt-6 text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-[1.05]"
                 {...fadeUp(0.15)}
               >
-                Your Journey to{' '}
+                India's Private Aviation{' '}
                 <TextShimmer className="font-serif font-bold italic">
-                  Aircraft Ownership
+                  Intelligence Platform
                 </TextShimmer>
               </motion.h1>
 
@@ -117,10 +117,10 @@ export default function Home() {
                   </Link>
                 </MovingBorder>
                 <Link
-                  to={createPageUrl('ContactSales')}
+                  to={createPageUrl('FleetDirectory')}
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-xl font-medium text-lg hover:bg-white/10 transition-all backdrop-blur-sm"
                 >
-                  Contact Sales
+                  Get Started Free
                 </Link>
               </motion.div>
             </div>
@@ -134,9 +134,13 @@ export default function Home() {
                 transition: { duration: 0.8, delay: 0.2 }
               })}
             >
-              <div
-                className="aspect-[16/10] rounded-2xl shadow-2xl shadow-black/40 bg-cover bg-center"
-                style={{ backgroundImage: 'url(/home-jet.jpeg)' }}
+              <img
+                src="/home-jet.jpeg"
+                alt="Private jet in flight"
+                width={1600}
+                height={900}
+                fetchPriority="high"
+                className="aspect-[16/10] rounded-2xl shadow-2xl shadow-black/40 object-cover w-full"
               />
 
               {/* Floating stat badge */}
@@ -189,9 +193,8 @@ export default function Home() {
             </h2>
           </motion.div>
 
-          {/* Featured tools: 2 large cards */}
-          <StaggerReveal className="grid lg:grid-cols-2 gap-6 mb-6">
-            {features.slice(0, 2).map((feature) => (
+          <StaggerReveal className="grid sm:grid-cols-2 gap-6">
+            {features.map((feature) => (
               <StaggerItem key={feature.title}>
                 <SpotlightCard className="rounded-2xl h-full">
                   <Link
@@ -199,42 +202,19 @@ export default function Home() {
                     className="block p-8 lg:p-10 bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/10 hover:border-sky-500/20 transition-colors group h-full"
                   >
                     <div className="flex items-start justify-between">
-                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center`}>
-                        <feature.icon className="w-7 h-7 text-white" />
+                      <div className={`w-14 h-14 rounded-xl ${feature.color} flex items-center justify-center`}>
+                        <feature.icon className="w-9 h-9" />
                       </div>
                       <ArrowRight className="w-5 h-5 text-slate-600 group-hover:text-sky-400 group-hover:translate-x-1 transition-all" />
                     </div>
-                    <h3 className="text-xl lg:text-2xl font-semibold text-white mt-6 group-hover:text-sky-400 transition-colors">
+                    <h3 className="text-xl lg:text-2xl font-semibold text-white mt-6 group-hover:text-sky-400 transition-colors line-clamp-1">
                       {feature.title}
                     </h3>
-                    <p className="text-slate-400 mt-3 leading-relaxed">
+                    <p className="text-slate-400 mt-3 leading-relaxed line-clamp-2">
                       {feature.description}
                     </p>
                   </Link>
                 </SpotlightCard>
-              </StaggerItem>
-            ))}
-          </StaggerReveal>
-
-          {/* Secondary tools: compact horizontal strip */}
-          <StaggerReveal className="grid sm:grid-cols-2 gap-6">
-            {features.slice(2).map((feature) => (
-              <StaggerItem key={feature.title}>
-                <Link
-                  to={createPageUrl(feature.href)}
-                  className="flex items-center gap-4 p-5 bg-white/[0.03] rounded-xl border border-white/10 hover:border-sky-500/20 transition-colors group"
-                >
-                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center flex-shrink-0`}>
-                    <feature.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-white group-hover:text-sky-400 transition-colors">
-                      {feature.title}
-                    </h3>
-                    <p className="text-slate-500 text-sm mt-0.5 truncate">{feature.description}</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-sky-400 group-hover:translate-x-1 transition-all flex-shrink-0" />
-                </Link>
               </StaggerItem>
             ))}
           </StaggerReveal>
