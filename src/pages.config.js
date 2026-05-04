@@ -24,7 +24,7 @@ export const LAZY_PAGES = new Set([
 
 // Pages requiring an active subscription. Kept as a Set so App.jsx can check membership cheaply.
 export const GATED_PAGES = new Set([
-  'AircraftComparison', 'RangeMap', 'FinanceCalculator', 'FleetDirectory',
+  'AircraftComparison', 'RangeMap', 'FinanceCalculator',
 ]);
 
 export const PAGES = {

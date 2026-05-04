@@ -43,8 +43,8 @@ export default function Layout({ children }) {
     { name: 'Finance Calculator', href: 'FinanceCalculator', icon: Calculator },
     { name: 'Fleet Directory', href: 'FleetDirectory', icon: ClipboardList },
     { name: 'Blog', href: 'Blog', icon: BookOpen },
-    { name: 'About Us', href: 'AboutUs', icon: Users },
     ...(isFree ? [{ name: 'Pricing', href: 'Pricing', icon: CreditCard, highlight: true }] : []),
+    { name: 'About Us', href: 'AboutUs', icon: Users },
   ];
 
   const isActive = (href) => location.pathname.includes(href);

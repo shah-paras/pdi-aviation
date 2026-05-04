@@ -117,7 +117,7 @@ export default function Home() {
                   </Link>
                 </MovingBorder>
                 <Link
-                  to={createPageUrl('FleetDirectory')}
+                  to={createPageUrl('Pricing')}
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/5 border border-white/10 text-white rounded-xl font-medium text-lg hover:bg-white/10 transition-all backdrop-blur-sm"
                 >
                   Get Started Free

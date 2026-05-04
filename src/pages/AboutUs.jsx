@@ -50,46 +50,24 @@ export default function AboutUs() {
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-5 gap-12 items-center">
-            <motion.div
-              className="lg:col-span-3"
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <span className="uppercase tracking-[0.3em] text-sky-400/70 text-xs font-medium">
-                About PDI Aviation
-              </span>
-              <h1 className="text-4xl lg:text-6xl font-bold text-white mt-4 mb-6 leading-[1.1]">
-                India's Premier{' '}
-                <span className="block text-slate-400 font-light font-serif italic">Aviation Advisory</span>
-              </h1>
-              <p className="text-lg text-slate-300/80 leading-relaxed max-w-xl">
-                For over 5 years, guiding businesses and individuals through every aspect
-                of aircraft ownership — from selection and acquisition to operations and resale.
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="lg:col-span-2 border-l border-sky-400/20 pl-8 space-y-8 hidden lg:block"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              <div>
-                <div className="text-3xl font-bold text-sky-400">5+</div>
-                <div className="text-sm text-slate-500 mt-0.5">Years in Indian Aviation</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-white">70+</div>
-                <div className="text-sm text-slate-500 mt-0.5">Aircraft Models Covered</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-white">₹1,200Cr+</div>
-                <div className="text-sm text-slate-500 mt-0.5">Advisory Support</div>
-              </div>
-            </motion.div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-3xl"
+          >
+            <span className="uppercase tracking-[0.3em] text-sky-400/70 text-xs font-medium">
+              About PDI Aviation
+            </span>
+            <h1 className="text-4xl lg:text-6xl font-bold text-white mt-4 mb-6 leading-[1.1]">
+              India's Premier{' '}
+              <span className="block text-slate-400 font-light font-serif italic">Aviation Advisory</span>
+            </h1>
+            <p className="text-lg text-slate-300/80 leading-relaxed max-w-xl">
+              For over 5 years, guiding businesses and individuals through every aspect
+              of aircraft ownership — from selection and acquisition to operations and resale.
+            </p>
+          </motion.div>
         </div>
       </section>
 

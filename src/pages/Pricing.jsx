@@ -416,6 +416,12 @@ export default function Pricing() {
           <p className="text-slate-600 text-[13px] mt-3">
             No credit card required &middot; Cancel anytime &middot; Payments secured by Razorpay
           </p>
+          <Link
+            to="/AircraftComparison"
+            className="inline-block mt-4 text-sm text-slate-500 hover:text-sky-400 transition-colors"
+          >
+            Continue with current plan &rarr;
+          </Link>
         </div>
 
         {/* Manage plan link */}

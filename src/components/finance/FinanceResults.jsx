@@ -1,8 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  DollarSign, TrendingUp, Clock, Fuel,
-  PiggyBank, BarChart3, Calendar
+  Fuel, PiggyBank, BarChart3
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useCurrency } from '@/hooks/use-currency';
@@ -26,34 +25,10 @@ export default function FinanceResults({ values, calculations }) {
   } = calculations;
 
   const statCards = [
-    {
-      label: 'Monthly Payment',
-      value: formatCurrency(monthlyPayment),
-      icon: Calendar,
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-500/10'
-    },
-    {
-      label: 'Total Interest',
-      value: formatCurrency(totalInterest),
-      icon: TrendingUp,
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-500/10'
-    },
-    {
-      label: 'Annual Operating Cost',
-      value: formatCurrency(totalAnnualCostUpdated),
-      icon: DollarSign,
-      color: 'from-sky-500 to-sky-600',
-      bgColor: 'bg-sky-500/10'
-    },
-    {
-      label: 'Cost Per Hour',
-      value: formatCurrency(costPerHourUpdated),
-      icon: Clock,
-      color: 'from-emerald-500 to-emerald-600',
-      bgColor: 'bg-emerald-500/10'
-    }
+    { label: 'Monthly Payment', value: formatCurrency(monthlyPayment), bgColor: 'bg-blue-500/10' },
+    { label: 'Total Interest', value: formatCurrency(totalInterest), bgColor: 'bg-purple-500/10' },
+    { label: 'Annual Operating Cost', value: formatCurrency(totalAnnualCostUpdated), bgColor: 'bg-sky-500/10' },
+    { label: 'Cost Per Hour', value: formatCurrency(costPerHourUpdated), bgColor: 'bg-emerald-500/10' },
   ];
 
   return (
@@ -87,15 +62,8 @@ export default function FinanceResults({ values, calculations }) {
             transition={{ delay: index * 0.05 }}
           >
             <Card className={`p-5 ${stat.bgColor} border-white/10`}>
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-slate-400 font-medium">{stat.label}</p>
-                  <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
-                </div>
-                <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.color}`}>
-                  <stat.icon className="w-5 h-5 text-white" />
-                </div>
-              </div>
+              <p className="text-sm text-slate-400 font-medium">{stat.label}</p>
+              <p className="text-2xl font-bold text-white mt-1">{stat.value}</p>
             </Card>
           </motion.div>
         ))}
