@@ -273,7 +273,7 @@ export default function Home() {
               {...fadeSlide(0.15)}
             >
               <span className="uppercase tracking-[0.25em] text-sky-400/60 text-xs font-medium">
-                Why PDI Aviation
+                Why 
               </span>
               <h2 className="text-3xl lg:text-5xl font-bold text-white mt-4 mb-8 leading-tight">
                 Aviation Leaders{' '}
