@@ -31,7 +31,7 @@ export const TIERS = {
         { text: 'View sample output', active: true },
         { text: 'Edit inputs', active: false },
       ],
-      'Fleet Directory': [{ text: 'Top 10 operators', active: true }],
+      'Fleet Directory': [{ text: 'All 137 operators', active: true }],
     },
   },
 
@@ -118,7 +118,7 @@ export const COMPARISON_ROWS = [
   { label: 'Edit inputs', values: [false, true, true] },
   { label: 'Amortisation schedule', values: [false, true, true] },
   { section: 'Fleet Directory' },
-  { label: 'Operators visible', values: ['Top 10', 'All 137', 'All 137'] },
+  { label: 'Operators visible', values: ['All 137', 'All 137', 'All 137'] },
   { label: 'CSV export', values: [false, false, 'purple'] },
 ];
 
@@ -131,7 +131,7 @@ export const FAQS = [
   },
   {
     q: 'Is GST included in the price?',
-    a: 'GST is charged additionally at 18% on all paid plans as required by Indian tax regulations. Your invoice will reflect the GST amount separately.',
+    a: 'All prices shown are inclusive. No additional GST is charged at checkout.',
   },
   {
     q: 'Which payment methods are accepted?',

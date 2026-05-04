@@ -7,20 +7,7 @@ import { useSubscription } from '@/lib/auth/useSubscription';
 import { supabase } from '@/lib/supabase';
 import { TIERS, TIER_ORDER, COMPARISON_ROWS, FAQS } from '@/config/tiers';
 
-// ─── USD prices for non-India users ────────────────────────────────────────
-const USD_PRICES = {
-  enthusiast: { monthly: 3.49, annual: 34.90 },
-  insider:    { monthly: 5.99, annual: 59.90 },
-};
 
-// ─── Country detection ─────────────────────────────────────────────────────
-function detectInitialCountry() {
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-    if (tz.startsWith('Asia/Kolkata') || tz.startsWith('Asia/Calcutta')) return 'IN';
-  } catch { /* no-op */ }
-  return 'OTHER';
-}
 
 // ─── Button style map ──────────────────────────────────────────────────────
 const BTN_CLASSES = {
@@ -50,7 +37,7 @@ const cardVariant = {
 };
 
 // ─── Pricing Card (inline component) ───────────────────────────────────────
-function PricingCard({ tierId, tier, billing, country, currentTier, onSubscribe, loading, user }) {
+function PricingCard({ tierId, tier, billing, currentTier, onSubscribe, loading, user }) {
   const isFree    = tier.price.monthly === null;
   const isCurrent = currentTier === tierId;
 
@@ -59,14 +46,9 @@ function PricingCard({ tierId, tier, billing, country, currentTier, onSubscribe,
   if (isFree) {
     priceLabel = 'Free';
     priceNote  = 'Forever free';
-  } else if (country === 'IN') {
+  } else {
     const amt = billing === 'annual' ? tier.price.annual : tier.price.monthly;
     priceLabel = `₹${amt.toLocaleString('en-IN')}`;
-    priceNote  = billing === 'annual' ? 'per year · 2 months free' : 'per month';
-  } else {
-    const usd = USD_PRICES[tierId];
-    const amt = billing === 'annual' ? usd.annual : usd.monthly;
-    priceLabel = `$${amt.toFixed(2)}`;
     priceNote  = billing === 'annual' ? 'per year · 2 months free' : 'per month';
   }
 
@@ -102,9 +84,7 @@ function PricingCard({ tierId, tier, billing, country, currentTier, onSubscribe,
       <div className="mb-6 pb-6 border-b border-white/[0.07]">
         <div className="text-[32px] font-light text-slate-50 tracking-tight leading-none">
           {!isFree && (
-            <sup className="text-base font-normal align-super mr-0.5">
-              {country === 'IN' ? '₹' : '$'}
-            </sup>
+            <sup className="text-base font-normal align-super mr-0.5">₹</sup>
           )}
           {isFree ? 'Free' : priceLabel.replace(/^[₹$]/, '')}
         </div>
@@ -179,7 +159,6 @@ export default function Pricing() {
   const next       = params.get('next') || '/';
 
   const [billing, setBilling]   = useState('monthly');
-  const [country, setCountry]   = useState(detectInitialCountry);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
 
@@ -205,28 +184,23 @@ export default function Pricing() {
         return;
       }
 
-      const fn = country === 'IN' ? 'create-razorpay-order' : 'create-stripe-checkout';
-      const { data, error: fnError } = await supabase.functions.invoke(fn, {
+      const { data, error: fnError } = await supabase.functions.invoke('create-razorpay-order', {
         body: { billing, tier: selectedTier, next },
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
 
-      if (country === 'IN') {
-        if (!window.Razorpay) throw new Error('Razorpay SDK not loaded — please refresh');
-        const rzp = new window.Razorpay({
-          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          subscription_id: data.subscription_id,
-          name: 'PDI Aviation',
-          description: `${TIERS[selectedTier].name} — ${billing}`,
-          handler: () => navigate(decodeURIComponent(next), { replace: true }),
-          prefill: { email: user.email, name: user.user_metadata?.full_name || '' },
-          theme: { color: '#0ea5e9' },
-        });
-        rzp.open();
-      } else {
-        window.location.href = data.url;
-      }
+      if (!window.Razorpay) throw new Error('Razorpay SDK not loaded — please refresh');
+      const rzp = new window.Razorpay({
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        subscription_id: data.subscription_id,
+        name: 'PDI Aviation',
+        description: `${TIERS[selectedTier].name} — ${billing}`,
+        handler: () => navigate(decodeURIComponent(next), { replace: true }),
+        prefill: { email: user.email, name: user.user_metadata?.full_name || '' },
+        theme: { color: '#0ea5e9' },
+      });
+      rzp.open();
     } catch (err) {
       setError(err?.message || 'Could not start checkout');
     } finally {
@@ -278,20 +252,6 @@ export default function Pricing() {
             </span>
           </div>
 
-          {/* Country selector */}
-          <div className="flex justify-center">
-            <label className="inline-flex items-center gap-2 text-xs text-slate-500">
-              Pay from
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="bg-slate-900 border border-white/10 rounded-md px-2 py-1 text-slate-200"
-              >
-                <option value="IN">India (Razorpay, UPI/cards)</option>
-                <option value="OTHER">Other (Stripe, card)</option>
-              </select>
-            </label>
-          </div>
         </div>
 
         {/* Error banner */}
@@ -315,7 +275,6 @@ export default function Pricing() {
               tierId={id}
               tier={TIERS[id]}
               billing={billing}
-              country={country}
               currentTier={currentTier}
               onSubscribe={handleSubscribe}
               loading={loading}
