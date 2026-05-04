@@ -62,7 +62,7 @@ function PricingCard({ tierId, tier, billing, country, currentTier, onSubscribe,
   } else if (country === 'IN') {
     const amt = billing === 'annual' ? tier.price.annual : tier.price.monthly;
     priceLabel = `₹${amt.toLocaleString('en-IN')}`;
-    priceNote  = billing === 'annual' ? 'per year + GST · 2 months free' : 'per month + GST';
+    priceNote  = billing === 'annual' ? 'per year · 2 months free' : 'per month';
   } else {
     const usd = USD_PRICES[tierId];
     const amt = billing === 'annual' ? usd.annual : usd.monthly;
