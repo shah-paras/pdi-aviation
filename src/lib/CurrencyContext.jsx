@@ -50,6 +50,11 @@ export function CurrencyProvider({ children }) {
     return amountInUSD * rate;
   }, [rates, selectedCurrency]);
 
+  const reverseConvertAmount = useCallback((amountInSelectedCurrency) => {
+    const rate = rates[selectedCurrency] || 1;
+    return amountInSelectedCurrency / rate;
+  }, [rates, selectedCurrency]);
+
   const formatPrice = useCallback((amountInUSD, opts = {}) => {
     const converted = convertAmount(amountInUSD);
     const meta = getCurrencyMeta(selectedCurrency);
@@ -76,13 +81,14 @@ export function CurrencyProvider({ children }) {
     selectedCurrency,
     setSelectedCurrency,
     convertAmount,
+    reverseConvertAmount,
     formatPrice,
     formatNumber,
     currencySymbol,
     currencies: CURRENCIES,
     ratesLoading,
     usingFallback,
-  }), [selectedCurrency, setSelectedCurrency, convertAmount, formatPrice, formatNumber, currencySymbol, ratesLoading, usingFallback]);
+  }), [selectedCurrency, setSelectedCurrency, convertAmount, reverseConvertAmount, formatPrice, formatNumber, currencySymbol, ratesLoading, usingFallback]);
 
   return (
     <CurrencyContext.Provider value={value}>

@@ -15,29 +15,45 @@ export default function FinanceResults({ values, calculations }) {
     totalLoanCost,
     annualFuelCost,
     annualMaintenanceCost,
-    annualFixedCosts,
-    totalAnnualCost,
-    costPerHour,
     landingFeesAnnual,
-    maxRangeOnFuel,
     totalAnnualCostUpdated,
     costPerHourUpdated,
+    maxRangeOnFuel,
   } = calculations;
+
+  const hasInput = values.purchasePrice > 0 || values.annualHours > 0 ||
+    values.fuelBurnGPH > 0 || values.insurancePerYear > 0;
 
   const statCards = [
     { label: 'Monthly Payment', value: formatCurrency(monthlyPayment), bgColor: 'bg-blue-500/10' },
     { label: 'Total Interest', value: formatCurrency(totalInterest), bgColor: 'bg-purple-500/10' },
     { label: 'Annual Operating Cost', value: formatCurrency(totalAnnualCostUpdated), bgColor: 'bg-sky-500/10' },
-    { label: 'Cost Per Hour', value: formatCurrency(costPerHourUpdated), bgColor: 'bg-emerald-500/10' },
+    { label: 'Cost Per Hour', value: costPerHourUpdated > 0 ? formatCurrency(costPerHourUpdated) : '—', bgColor: 'bg-emerald-500/10' },
   ];
+
+  if (!hasInput) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-2xl bg-sky-500/10 flex items-center justify-center mx-auto mb-4">
+            <BarChart3 className="w-8 h-8 text-sky-400/50" />
+          </div>
+          <p className="text-slate-400 text-lg font-medium">Select an aircraft or enter values</p>
+          <p className="text-slate-500 text-sm mt-1">Results will appear here</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       {/* Cost Analysis — key metrics at top */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card className="p-3 text-center bg-white/5 backdrop-blur-sm border-white/10">
           <p className="text-sm text-slate-400 mb-1">Cost Per Flight Hour</p>
-          <p className="text-xl font-bold text-white">{formatCurrency(costPerHourUpdated)}</p>
+          <p className="text-xl font-bold text-white">
+            {costPerHourUpdated > 0 ? formatCurrency(costPerHourUpdated) : '—'}
+          </p>
           <Badge className="mt-2 bg-slate-700 text-slate-300">Variable + Fixed</Badge>
         </Card>
         <Card className="p-3 text-center bg-blue-500/10 border-blue-500/20">
@@ -53,7 +69,7 @@ export default function FinanceResults({ values, calculations }) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {statCards.map((stat, index) => (
           <motion.div
             key={stat.label}
@@ -138,16 +154,16 @@ export default function FinanceResults({ values, calculations }) {
           </div>
           <div className="p-5">
             <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-white/5">
-                <span className="text-slate-300 flex items-center gap-2">
-                  <Fuel className="w-4 h-4" />
-                  Fuel ({values.annualHours} hrs × {values.fuelBurnGPH} gal/hr × ${values.fuelCostPerGallon}/gal)
+              <div className="flex flex-wrap justify-between py-2 border-b border-white/5 gap-x-2">
+                <span className="text-xs sm:text-sm text-slate-300 flex items-center gap-2 min-w-0">
+                  <Fuel className="w-4 h-4 flex-shrink-0" />
+                  <span className="break-words">Fuel ({values.annualHours} hrs x {values.fuelBurnGPH} gal/hr x ${values.fuelCostPerGallon}/gal)</span>
                 </span>
-                <span className="font-medium text-white">{formatCurrency(annualFuelCost)}</span>
+                <span className="font-medium text-white flex-shrink-0">{formatCurrency(annualFuelCost)}</span>
               </div>
-              <div className="flex justify-between py-2 border-b border-white/5">
-                <span className="text-slate-300">Maintenance Reserve ({values.annualHours} hrs × ${values.maintenancePerHour}/hr)</span>
-                <span className="font-medium text-white">{formatCurrency(annualMaintenanceCost)}</span>
+              <div className="flex flex-wrap justify-between py-2 border-b border-white/5 gap-x-2">
+                <span className="text-xs sm:text-sm text-slate-300 min-w-0 break-words">Maintenance Reserve ({values.annualHours} hrs x ${values.maintenancePerHour}/hr)</span>
+                <span className="font-medium text-white flex-shrink-0">{formatCurrency(annualMaintenanceCost)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-white/5">
                 <span className="text-slate-300">Insurance</span>

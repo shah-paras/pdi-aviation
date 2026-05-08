@@ -3,6 +3,17 @@ import { Check, ChevronsUpDown, Plane, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+const CATEGORY_ORDER = [
+  'Very Light Jet',
+  'Light Jet',
+  'Mid-Size Jet',
+  'Super Mid-Size Jet',
+  'Heavy Jet',
+  'Long Range Jet',
+  'Ultra Long Range Jet',
+  'VIP Airliner',
+];
+
 export default function AircraftSearchSelect({ aircraft, value, onValueChange }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -31,13 +42,15 @@ export default function AircraftSearchSelect({ aircraft, value, onValueChange })
     );
   }, [aircraft, search]);
 
-  // Group filtered aircraft by category
+  // Group filtered aircraft by category, sorted by CATEGORY_ORDER
   const grouped = useMemo(() => {
     const groups = {};
     for (const a of filtered) {
       (groups[a.category] = groups[a.category] || []).push(a);
     }
-    return Object.entries(groups);
+    return CATEGORY_ORDER
+      .filter((cat) => groups[cat])
+      .map((cat) => [cat, groups[cat]]);
   }, [filtered]);
 
   const handleSelect = (id) => {

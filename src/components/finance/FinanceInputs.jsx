@@ -1,22 +1,31 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Percent, Fuel, Shield } from 'lucide-react';
+import { Percent, Fuel, Shield, Plane, Search, ChevronDown, RefreshCw } from 'lucide-react';
 import { useCurrency } from '@/hooks/use-currency';
 import { getCurrencyMeta } from '@/lib/currency-config';
+import { AIRCRAFT_DATA, AIRCRAFT_CATEGORIES } from '@/data/aircraftFinanceData';
 
-export default function FinanceInputs({ values, onChange }) {
-  const { currencySymbol, selectedCurrency } = useCurrency();
+export default function FinanceInputs({ values, onChange, selectedAircraft, onAircraftSelect, inputMode = 'aircraft' }) {
+  const { currencySymbol, selectedCurrency, reverseConvertAmount, convertAmount } = useCurrency();
   const meta = getCurrencyMeta(selectedCurrency);
   const [rawInputs, setRawInputs] = useState({});
+  const [aircraftSearch, setAircraftSearch] = useState('');
+  const [aircraftExpanded, setAircraftExpanded] = useState(!selectedAircraft);
+  const isManual = inputMode === 'manual';
+
   const handleChange = (key, value) => {
     onChange({ ...values, [key]: value });
   };
 
   const formatCurrency = (num) => {
     return new Intl.NumberFormat(meta.locale).format(num);
+  };
+
+  const displayValue = (usdValue) => {
+    return formatCurrency(isManual ? convertAmount(usdValue) : usdValue);
   };
 
   const parseCurrency = (str) => {
@@ -26,15 +35,122 @@ export default function FinanceInputs({ values, onChange }) {
   const handleCurrencyInput = (key, rawValue) => {
     const filtered = rawValue.replace(/[^0-9.,-]/g, '');
     setRawInputs(prev => ({ ...prev, [key]: filtered }));
-    handleChange(key, parseCurrency(filtered));
+    const parsed = parseCurrency(filtered);
+    handleChange(key, isManual ? reverseConvertAmount(parsed) : parsed);
   };
 
   const clearRawInput = (key) => {
     setRawInputs(prev => { const { [key]: _, ...rest } = prev; return rest; });
   };
 
+  const filteredAircraft = useMemo(() => {
+    if (!aircraftSearch.trim()) return AIRCRAFT_DATA;
+    const q = aircraftSearch.toLowerCase();
+    return AIRCRAFT_DATA.filter(a =>
+      a.name.toLowerCase().includes(q) || a.category.toLowerCase().includes(q)
+    );
+  }, [aircraftSearch]);
+
+  const groupedAircraft = useMemo(() => {
+    const groups = {};
+    for (const cat of AIRCRAFT_CATEGORIES) {
+      const items = filteredAircraft.filter(a => a.category === cat);
+      if (items.length > 0) groups[cat] = items;
+    }
+    return groups;
+  }, [filteredAircraft]);
+
   return (
     <div className="space-y-6">
+      {/* Aircraft Selection — hidden in manual mode */}
+      {!isManual && (
+        <div className="bg-sky-500/5 backdrop-blur-sm rounded-xl border border-sky-500/20 p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Plane className="w-5 h-5 text-sky-400" />
+              <h3 className="font-semibold text-white">Select Aircraft</h3>
+            </div>
+            {selectedAircraft && !aircraftExpanded && (
+              <button
+                type="button"
+                onClick={() => setAircraftExpanded(true)}
+                className="text-xs text-sky-400 hover:text-sky-300 flex items-center gap-1 transition-colors"
+              >
+                <RefreshCw className="w-3 h-3" /> Change
+              </button>
+            )}
+          </div>
+
+          {/* Collapsed: show selected aircraft summary */}
+          {selectedAircraft && !aircraftExpanded && (
+            <button
+              type="button"
+              onClick={() => setAircraftExpanded(true)}
+              className="w-full text-left p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/15 transition-colors group"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium text-sky-300">{selectedAircraft.name}</div>
+                <ChevronDown className="w-4 h-4 text-slate-500 group-hover:text-slate-400 transition-colors" />
+              </div>
+              <div className="text-xs text-slate-400 mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5">
+                <span>{selectedAircraft.passengers} pax</span>
+                <span>{selectedAircraft.rangeNm.toLocaleString()} nm</span>
+                <span>{selectedAircraft.speedKtas} ktas</span>
+                <span>{selectedAircraft.fuelBurnGPH} gal/hr</span>
+              </div>
+            </button>
+          )}
+
+          {/* Expanded: search + list */}
+          {(aircraftExpanded || !selectedAircraft) && (
+            <>
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Input
+                  type="text"
+                  placeholder="Search aircraft..."
+                  value={aircraftSearch}
+                  onChange={(e) => setAircraftSearch(e.target.value)}
+                  className="pl-9 bg-slate-900 border-slate-800 text-slate-200"
+                />
+              </div>
+
+              <div className="max-h-48 overflow-y-auto scrollbar-thin rounded-lg border border-slate-800 bg-slate-900/50">
+                {Object.entries(groupedAircraft).map(([category, aircraft]) => (
+                  <div key={category}>
+                    <div className="px-3 py-1.5 text-[11px] font-semibold text-sky-400 uppercase tracking-wider bg-slate-900 sticky top-0 z-10 border-b border-slate-800">
+                      {category}
+                    </div>
+                    {aircraft.map(a => (
+                      <button
+                        key={a.name}
+                        type="button"
+                        onClick={() => {
+                          onAircraftSelect(a);
+                          setAircraftSearch('');
+                          setAircraftExpanded(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-sky-500/10 transition-colors flex items-center justify-between ${
+                          selectedAircraft?.name === a.name
+                            ? 'bg-sky-500/15 text-sky-300'
+                            : 'text-slate-300'
+                        }`}
+                      >
+                        <span>{a.name}</span>
+                        <span className="text-xs text-slate-500">{a.passengers} pax</span>
+                      </button>
+                    ))}
+                  </div>
+                ))}
+                {filteredAircraft.length === 0 && (
+                  <div className="px-3 py-4 text-sm text-slate-500 text-center">No aircraft found</div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Purchase Price */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-5">
         <div className="flex items-center gap-2 mb-4">
@@ -43,18 +159,21 @@ export default function FinanceInputs({ values, onChange }) {
         </div>
 
         <div>
-          <Label className="text-sm text-slate-300 mb-1.5 block">Purchase Price ({selectedCurrency})</Label>
+          <Label className="text-sm text-slate-300 mb-1.5 block">Purchase Price ({isManual ? selectedCurrency : 'USD'})</Label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{isManual ? currencySymbol : '$'}</span>
             <Input
               type="text"
               inputMode="decimal"
-              value={rawInputs.purchasePrice !== undefined ? rawInputs.purchasePrice : formatCurrency(values.purchasePrice)}
+              value={rawInputs.purchasePrice !== undefined ? rawInputs.purchasePrice : displayValue(values.purchasePrice)}
               onChange={(e) => handleCurrencyInput('purchasePrice', e.target.value)}
               onBlur={() => clearRawInput('purchasePrice')}
               className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
             />
           </div>
+          <p className="text-xs text-slate-500 mt-1">
+            {isManual ? `Enter values in ${selectedCurrency} — converted internally` : 'All values in USD — converted in results'}
+          </p>
         </div>
       </div>
 
@@ -79,7 +198,7 @@ export default function FinanceInputs({ values, onChange }) {
               step={5}
             />
             <div className="text-xs text-slate-400 mt-1">
-              {currencySymbol}{formatCurrency(values.purchasePrice * values.downPaymentPercent / 100)}
+              {isManual ? currencySymbol : '$'}{displayValue(values.purchasePrice * values.downPaymentPercent / 100)}
             </div>
           </div>
 
@@ -186,7 +305,7 @@ export default function FinanceInputs({ values, onChange }) {
           <h3 className="font-semibold text-white">Operating Costs</h3>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div>
             <Label className="text-sm text-slate-300 mb-1.5 block">Annual Flight Hours</Label>
             <Input
@@ -196,59 +315,73 @@ export default function FinanceInputs({ values, onChange }) {
               className="bg-slate-900 border-slate-800 text-slate-200"
             />
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Fuel Cost ({isManual ? currencySymbol : '$'}/gal)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                value={isManual ? Math.round(convertAmount(values.fuelCostPerGallon) * 100) / 100 : values.fuelCostPerGallon}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0;
+                  handleChange('fuelCostPerGallon', isManual ? reverseConvertAmount(val) : val);
+                }}
+                className="bg-slate-900 border-slate-800 text-slate-200"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Fuel Burn (gal/hr)</Label>
+              <Input
+                type="number"
+                value={values.fuelBurnGPH}
+                onChange={(e) => handleChange('fuelBurnGPH', parseFloat(e.target.value) || 0)}
+                className="bg-slate-900 border-slate-800 text-slate-200"
+              />
+            </div>
+          </div>
+
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Fuel Cost ({currencySymbol}/gal)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Maintenance Reserve ({isManual ? currencySymbol : '$'}/hr)</Label>
             <Input
               type="number"
-              step="0.1"
-              value={values.fuelCostPerGallon}
-              onChange={(e) => handleChange('fuelCostPerGallon', parseFloat(e.target.value) || 0)}
+              value={isManual ? Math.round(convertAmount(values.maintenancePerHour) * 100) / 100 : values.maintenancePerHour}
+              onChange={(e) => {
+                const val = parseFloat(e.target.value) || 0;
+                handleChange('maintenancePerHour', isManual ? reverseConvertAmount(val) : val);
+              }}
               className="bg-slate-900 border-slate-800 text-slate-200"
             />
           </div>
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Fuel Burn (gal/hr)</Label>
-            <Input
-              type="number"
-              value={values.fuelBurnGPH}
-              onChange={(e) => handleChange('fuelBurnGPH', parseFloat(e.target.value) || 0)}
-              className="bg-slate-900 border-slate-800 text-slate-200"
-            />
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Fuel Capacity (gal)</Label>
+              <Input
+                type="number"
+                step="10"
+                min="0"
+                placeholder="0 = skip"
+                value={values.fuelCapacityGallons}
+                onChange={(e) => handleChange('fuelCapacityGallons', Number(e.target.value))}
+                className="bg-slate-900 border-slate-800 text-slate-200"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Cruise Speed (kt)</Label>
+              <Input
+                type="number"
+                step="10"
+                min="0"
+                value={values.cruiseSpeedKtas}
+                onChange={(e) => handleChange('cruiseSpeedKtas', Number(e.target.value))}
+                className="bg-slate-900 border-slate-800 text-slate-200"
+              />
+            </div>
           </div>
+
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Maintenance Reserve ({currencySymbol}/hr)</Label>
-            <Input
-              type="number"
-              value={values.maintenancePerHour}
-              onChange={(e) => handleChange('maintenancePerHour', parseFloat(e.target.value) || 0)}
-              className="bg-slate-900 border-slate-800 text-slate-200"
-            />
-          </div>
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Fuel Capacity (gal)</Label>
-            <Input
-              type="number"
-              step="10"
-              min="0"
-              placeholder="0 = skip fuel check"
-              value={values.fuelCapacityGallons}
-              onChange={(e) => handleChange('fuelCapacityGallons', Number(e.target.value))}
-              className="bg-slate-900 border-slate-800 text-slate-200"
-            />
-          </div>
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Cruise Speed (kt)</Label>
-            <Input
-              type="number"
-              step="10"
-              min="100"
-              value={values.cruiseSpeedKtas}
-              onChange={(e) => handleChange('cruiseSpeedKtas', Number(e.target.value))}
-              className="bg-slate-900 border-slate-800 text-slate-200"
-            />
-          </div>
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Typical Trip Distance (nm)</Label>
+            <Label className="text-sm text-slate-300 mb-1.5 block">Trip Distance (nm)</Label>
             <Input
               type="number"
               step="50"
@@ -266,74 +399,78 @@ export default function FinanceInputs({ values, onChange }) {
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-5">
         <div className="flex items-center gap-2 mb-4">
           <Shield className="w-5 h-5 text-sky-400" />
-          <h3 className="font-semibold text-white">Fixed Annual Costs</h3>
+          <h3 className="font-semibold text-white">Fixed Annual Costs ({isManual ? selectedCurrency : 'USD'})</h3>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Insurance ({currencySymbol}/year)</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={rawInputs.insurancePerYear !== undefined ? rawInputs.insurancePerYear : formatCurrency(values.insurancePerYear)}
-                onChange={(e) => handleCurrencyInput('insurancePerYear', e.target.value)}
-                onBlur={() => clearRawInput('insurancePerYear')}
-                className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
-              />
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Insurance (/yr)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{isManual ? currencySymbol : '$'}</span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={rawInputs.insurancePerYear !== undefined ? rawInputs.insurancePerYear : displayValue(values.insurancePerYear)}
+                  onChange={(e) => handleCurrencyInput('insurancePerYear', e.target.value)}
+                  onBlur={() => clearRawInput('insurancePerYear')}
+                  className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Hangar (/yr)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{isManual ? currencySymbol : '$'}</span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={rawInputs.hangarPerYear !== undefined ? rawInputs.hangarPerYear : displayValue(values.hangarPerYear)}
+                  onChange={(e) => handleCurrencyInput('hangarPerYear', e.target.value)}
+                  onBlur={() => clearRawInput('hangarPerYear')}
+                  className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Crew (/yr)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{isManual ? currencySymbol : '$'}</span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={rawInputs.crewPerYear !== undefined ? rawInputs.crewPerYear : displayValue(values.crewPerYear)}
+                  onChange={(e) => handleCurrencyInput('crewPerYear', e.target.value)}
+                  onBlur={() => clearRawInput('crewPerYear')}
+                  className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Management (/yr)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{isManual ? currencySymbol : '$'}</span>
+                <Input
+                  type="text"
+                  inputMode="decimal"
+                  value={rawInputs.managementPerYear !== undefined ? rawInputs.managementPerYear : displayValue(values.managementPerYear)}
+                  onChange={(e) => handleCurrencyInput('managementPerYear', e.target.value)}
+                  onBlur={() => clearRawInput('managementPerYear')}
+                  className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
+                />
+              </div>
             </div>
           </div>
           <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Hangar ({currencySymbol}/year)</Label>
+            <Label className="text-xs text-slate-300 mb-1.5 block">Catering (/yr)</Label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{isManual ? currencySymbol : '$'}</span>
               <Input
                 type="text"
                 inputMode="decimal"
-                value={rawInputs.hangarPerYear !== undefined ? rawInputs.hangarPerYear : formatCurrency(values.hangarPerYear)}
-                onChange={(e) => handleCurrencyInput('hangarPerYear', e.target.value)}
-                onBlur={() => clearRawInput('hangarPerYear')}
-                className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
-              />
-            </div>
-          </div>
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Crew ({currencySymbol}/year)</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={rawInputs.crewPerYear !== undefined ? rawInputs.crewPerYear : formatCurrency(values.crewPerYear)}
-                onChange={(e) => handleCurrencyInput('crewPerYear', e.target.value)}
-                onBlur={() => clearRawInput('crewPerYear')}
-                className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
-              />
-            </div>
-          </div>
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Management ({currencySymbol}/year)</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={rawInputs.managementPerYear !== undefined ? rawInputs.managementPerYear : formatCurrency(values.managementPerYear)}
-                onChange={(e) => handleCurrencyInput('managementPerYear', e.target.value)}
-                onBlur={() => clearRawInput('managementPerYear')}
-                className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
-              />
-            </div>
-          </div>
-          <div>
-            <Label className="text-sm text-slate-300 mb-1.5 block">Catering ({currencySymbol}/year)</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={rawInputs.cateringPerYear !== undefined ? rawInputs.cateringPerYear : formatCurrency(values.cateringPerYear)}
+                value={rawInputs.cateringPerYear !== undefined ? rawInputs.cateringPerYear : displayValue(values.cateringPerYear)}
                 onChange={(e) => handleCurrencyInput('cateringPerYear', e.target.value)}
                 onBlur={() => clearRawInput('cateringPerYear')}
                 className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
@@ -347,13 +484,13 @@ export default function FinanceInputs({ values, onChange }) {
           <Label className="text-sm text-slate-300 mb-1.5 block">Landing Fees</Label>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs text-slate-400 mb-1 block">Per Trip ({currencySymbol})</Label>
+              <Label className="text-xs text-slate-400 mb-1 block">Per Trip ({isManual ? currencySymbol : '$'})</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{currencySymbol}</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{isManual ? currencySymbol : '$'}</span>
                 <Input
                   type="text"
                   inputMode="decimal"
-                  value={rawInputs.landingFeesPerTrip !== undefined ? rawInputs.landingFeesPerTrip : formatCurrency(values.landingFeesPerTrip)}
+                  value={rawInputs.landingFeesPerTrip !== undefined ? rawInputs.landingFeesPerTrip : displayValue(values.landingFeesPerTrip)}
                   onChange={(e) => handleCurrencyInput('landingFeesPerTrip', e.target.value)}
                   onBlur={() => clearRawInput('landingFeesPerTrip')}
                   className="pl-7 bg-slate-900 border-slate-800 text-slate-200"
@@ -373,7 +510,7 @@ export default function FinanceInputs({ values, onChange }) {
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-1.5">
-            Annual total: {currencySymbol}{formatCurrency(values.landingFeesPerTrip * values.tripsPerYear)}
+            Annual total: {isManual ? currencySymbol : '$'}{displayValue(values.landingFeesPerTrip * values.tripsPerYear)}
           </p>
         </div>
       </div>

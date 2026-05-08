@@ -402,6 +402,9 @@ export default function RangeMap() {
           let holdStart = null;
           let radarShown = false;
 
+          // Capture base zoom for animation speed scaling (uses dynamicZoom set after this block)
+          const singleBaseZoom = calculateZoomForRadius(nmToKm(circleAC ? circleRange : 2000), circleOrigin.lat);
+
           const lerpCoord = (coordA, coordB, frac) => [
             coordA[0] + (coordB[0] - coordA[0]) * frac,
             coordA[1] + (coordB[1] - coordA[1]) * frac,
@@ -410,9 +413,14 @@ export default function RangeMap() {
           const animate = (timestamp) => {
             if (!startTime) startTime = timestamp;
 
+            // Scale duration based on zoom: higher zoom = slower animation to maintain visual speed
+            const currentZoom = map.getZoom();
+            const zoomScale = Math.pow(2, currentZoom - singleBaseZoom);
+            const adjustedDuration = FLIGHT_DURATION_MS * Math.max(zoomScale, 0.5);
+
             if (phase === 'flying') {
               const elapsed = timestamp - startTime;
-              const tLinear = Math.min(elapsed / FLIGHT_DURATION_MS, 1);
+              const tLinear = Math.min(elapsed / adjustedDuration, 1);
               const t = tLinear < 0.5
                 ? 4 * tLinear * tLinear * tLinear
                 : 1 - Math.pow(-2 * tLinear + 2, 3) / 2;
@@ -575,6 +583,9 @@ export default function RangeMap() {
 
     setMultiPlotted(true);
 
+    // Capture base zoom for animation speed scaling
+    const multiBaseZoom = map.getZoom();
+
     if (reducedMotion || allArcCoords.length === 0) return;
 
     // Create jet marker
@@ -604,6 +615,11 @@ export default function RangeMap() {
 
       if (!startTime) startTime = timestamp;
 
+      // Scale duration based on zoom: higher zoom = slower animation to maintain visual speed
+      const currentZoom = map.getZoom();
+      const zoomScale = Math.pow(2, currentZoom - multiBaseZoom);
+      const adjustedDuration = FLIGHT_DURATION_MS * Math.max(zoomScale, 0.5);
+
       if (holding) {
         if (timestamp - holdStart >= HOLD_MS) {
           holding = false;
@@ -611,7 +627,7 @@ export default function RangeMap() {
           startTime = timestamp;
         }
       } else {
-        const tLinear = Math.min((timestamp - startTime) / FLIGHT_DURATION_MS, 1);
+        const tLinear = Math.min((timestamp - startTime) / adjustedDuration, 1);
         const t = tLinear < 0.5
           ? 4 * tLinear * tLinear * tLinear
           : 1 - Math.pow(-2 * tLinear + 2, 3) / 2;
@@ -988,7 +1004,6 @@ export default function RangeMap() {
                                 setMultiWaypoints(next);
                               }}
                               placeholder={`Stop ${idx + 1}...`}
-                              excludeCode={multiOrigin?.code}
                             />
                           </div>
                           {legStatus && (
