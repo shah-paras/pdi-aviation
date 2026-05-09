@@ -1,16 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Calculator, Download, RefreshCw, FileText, BarChart3, Loader2 } from 'lucide-react';
+import { Calculator, Download, RefreshCw, FileText, BarChart3, Loader2, Lock, Table } from 'lucide-react';
 import { motion } from 'framer-motion';
 import FinanceInputs from '@/components/finance/FinanceInputs';
 import FinanceResults from '@/components/finance/FinanceResults';
 import AmortizationTable from '@/components/finance/AmortizationTable';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
 import { useCurrency } from '@/hooks/use-currency';
-import FeatureGate from '@/components/auth/FeatureGate';
 import { useTierLimits } from '@/hooks/useTierLimits';
-import { FUEL_COST_PER_GALLON_USD, DEFAULT_ANNUAL_HOURS } from '@/data/aircraftFinanceData';
+import { hasAccess } from '@/config/tiers';
+import { FUEL_COST_PER_GALLON_USD, DEFAULT_ANNUAL_HOURS, AIRCRAFT_DATA } from '@/data/aircraftFinanceData';
 
 const defaultValues = {
   purchasePrice: 0,
@@ -42,7 +42,14 @@ export default function FinanceCalculator() {
   const [inputMode, setInputMode] = useState('aircraft');
   const [pdfLoading, setPdfLoading] = useState(false);
   const { formatNumber, currencySymbol, selectedCurrency, convertAmount } = useCurrency();
-  const { limits } = useTierLimits();
+  const { limits, tier: userTier } = useTierLimits();
+
+  useEffect(() => {
+    if (!selectedAircraft) {
+      const defaultJet = AIRCRAFT_DATA.find(a => a.name === 'Cessna Citation CJ3+');
+      if (defaultJet) handleAircraftSelect(defaultJet);
+    }
+  }, []);
 
   const handleAircraftSelect = (aircraft) => {
     setSelectedAircraft(aircraft);
@@ -138,21 +145,47 @@ export default function FinanceCalculator() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Month', `Payment (${selectedCurrency})`, `Principal (${selectedCurrency})`, `Interest (${selectedCurrency})`, `Balance (${selectedCurrency})`];
-    const rows = calculations.schedule.map(row => [
-      row.month,
-      convertAmount(row.payment).toFixed(2),
-      convertAmount(row.principal).toFixed(2),
-      convertAmount(row.interest).toFixed(2),
-      convertAmount(row.balance).toFixed(2)
-    ]);
+    const fmt = (v) => convertAmount(v).toFixed(2);
+    const lines = [];
 
-    const csvContent = [headers, ...rows].map(r => r.join(',')).join('\n');
+    lines.push(['PDI Aviation — Aircraft Finance Report']);
+    lines.push([`Generated ${new Date().toLocaleDateString()}`]);
+    lines.push([]);
+
+    lines.push(['Loan Summary', `Amount (${selectedCurrency})`]);
+    lines.push(['Purchase Price', fmt(values.purchasePrice)]);
+    lines.push(['Down Payment', fmt(calculations.downPayment)]);
+    lines.push(['Loan Amount', fmt(calculations.loanAmount)]);
+    lines.push(['Monthly Payment', fmt(calculations.monthlyPayment)]);
+    lines.push(['Total Interest', fmt(calculations.totalInterest)]);
+    lines.push(['Total Loan Cost', fmt(calculations.totalLoanCost)]);
+    if (values.loanType === 'balloon') {
+      lines.push(['Residual Value', fmt(calculations.residualValue)]);
+    }
+    lines.push([]);
+
+    lines.push(['Operating Costs (Annual)', `Amount (${selectedCurrency})`]);
+    lines.push(['Fuel Cost', fmt(calculations.annualFuelCost)]);
+    lines.push(['Maintenance', fmt(calculations.annualMaintenanceCost)]);
+    lines.push(['Insurance', fmt(values.insurancePerYear)]);
+    lines.push(['Hangar', fmt(values.hangarPerYear)]);
+    lines.push(['Crew', fmt(values.crewPerYear)]);
+    lines.push(['Management', fmt(values.managementPerYear)]);
+    lines.push(['Total Annual Cost', fmt(calculations.totalAnnualCost)]);
+    lines.push(['Cost Per Flight Hour', fmt(calculations.costPerHour)]);
+    lines.push([]);
+
+    lines.push(['Month', `Payment (${selectedCurrency})`, `Principal (${selectedCurrency})`, `Interest (${selectedCurrency})`, `Balance (${selectedCurrency})`]);
+    calculations.schedule.forEach(row => {
+      lines.push([row.month, fmt(row.payment), fmt(row.principal), fmt(row.interest), fmt(row.balance)]);
+    });
+
+    const csvContent = lines.map(r => r.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'amortization-schedule.csv';
+    a.download = 'pdi-aviation-finance-report.csv';
     a.click();
   };
 
@@ -245,19 +278,59 @@ export default function FinanceCalculator() {
                 <h1 className="text-lg font-semibold leading-tight">Finance Calculator</h1>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleExportPDF}
-                  disabled={pdfLoading}
-                  size="sm"
-                  className="bg-sky-600 hover:bg-sky-700 text-white"
-                >
-                  {pdfLoading ? (
-                    <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" />
-                  ) : (
-                    <Download className="w-4 h-4 sm:mr-2" />
+                <div className="relative group/pdf">
+                  <Button
+                    onClick={hasAccess(userTier, 'insider') ? handleExportPDF : undefined}
+                    disabled={!hasAccess(userTier, 'insider') || pdfLoading}
+                    size="sm"
+                    className="bg-sky-600 hover:bg-sky-700 text-white disabled:opacity-40"
+                  >
+                    {!hasAccess(userTier, 'insider') && <Lock className="w-3 h-3 sm:mr-1" />}
+                    {pdfLoading ? (
+                      <Loader2 className="w-4 h-4 sm:mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 sm:mr-2" />
+                    )}
+                    <span className="hidden sm:inline">Export PDF</span>
+                  </Button>
+                  {!hasAccess(userTier, 'insider') && (
+                    <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 pt-1 opacity-0 pointer-events-none group-hover/pdf:opacity-100 group-hover/pdf:pointer-events-auto transition-opacity duration-150">
+                      <div className="px-3 py-1.5 rounded-md bg-slate-800 border border-white/10 shadow-lg whitespace-nowrap">
+                        <span className="flex items-center gap-1.5 text-xs text-slate-300">
+                          <Lock className="w-3 h-3 text-slate-500" />
+                          Requires <span className="text-violet-400">Insider</span>
+                          <span className="text-slate-600">&middot;</span>
+                          <a href="/Pricing" className="text-sky-400 hover:text-sky-300">Upgrade &rarr;</a>
+                        </span>
+                      </div>
+                    </div>
                   )}
-                  <span className="hidden sm:inline">Export PDF</span>
-                </Button>
+                </div>
+                <div className="relative group/csv">
+                  <Button
+                    onClick={hasAccess(userTier, 'insider') ? handleExportCSV : undefined}
+                    disabled={!hasAccess(userTier, 'insider')}
+                    size="sm"
+                    variant="outline"
+                    className="border-slate-700 text-slate-300 hover:bg-white/5 disabled:opacity-40"
+                  >
+                    {!hasAccess(userTier, 'insider') && <Lock className="w-3 h-3 sm:mr-1" />}
+                    <Table className="w-4 h-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Export CSV</span>
+                  </Button>
+                  {!hasAccess(userTier, 'insider') && (
+                    <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 pt-1 opacity-0 pointer-events-none group-hover/csv:opacity-100 group-hover/csv:pointer-events-auto transition-opacity duration-150">
+                      <div className="px-3 py-1.5 rounded-md bg-slate-800 border border-white/10 shadow-lg whitespace-nowrap">
+                        <span className="flex items-center gap-1.5 text-xs text-slate-300">
+                          <Lock className="w-3 h-3 text-slate-500" />
+                          Requires <span className="text-violet-400">Insider</span>
+                          <span className="text-slate-600">&middot;</span>
+                          <a href="/Pricing" className="text-sky-400 hover:text-sky-300">Upgrade &rarr;</a>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <TabsList className="bg-slate-800 border border-slate-700 hidden sm:flex">
                   <TabsTrigger value="summary" className="flex items-center gap-2 data-[state=active]:bg-slate-700 data-[state=active]:text-white text-xs">
                     <BarChart3 className="w-3.5 h-3.5" />
@@ -289,17 +362,19 @@ export default function FinanceCalculator() {
           <div className="flex flex-col lg:flex-row gap-4 h-auto lg:h-full">
             {/* Left Panel - Inputs */}
             <div className="lg:w-[300px] flex-shrink-0 min-h-0 flex flex-col">
-              <FeatureGate requiredTier="enthusiast" feature="Edit calculator inputs" mode="blur" className="h-full overflow-hidden flex flex-col">
                 {/* Sticky header — does not scroll */}
-                <div className="flex-shrink-0 pb-3">
+                <div className="flex-shrink-0 pb-3 overflow-visible relative z-20">
                   <div className="flex items-center justify-between mb-3">
                     <h2 className="text-lg font-semibold text-white">Parameters</h2>
-                    <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
-                      <RefreshCw className="w-4 h-4 mr-1" />
-                      Reset
-                    </Button>
+                    {hasAccess(userTier, 'enthusiast') && (
+                      <Button variant="ghost" size="sm" onClick={handleReset} className="text-slate-400 hover:text-slate-300">
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Reset
+                      </Button>
+                    )}
                   </div>
                   <Tabs value={inputMode} onValueChange={(mode) => {
+                    if (mode === 'manual' && !hasAccess(userTier, 'enthusiast')) return;
                     setInputMode(mode);
                     if (mode === 'manual') {
                       setSelectedAircraft(null);
@@ -309,23 +384,42 @@ export default function FinanceCalculator() {
                       <TabsTrigger value="aircraft" className="flex-1 text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
                         By Aircraft
                       </TabsTrigger>
-                      <TabsTrigger value="manual" className="flex-1 text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
-                        Manual
-                      </TabsTrigger>
+                      <div className="relative flex-1 group/manual">
+                        <TabsTrigger
+                          value="manual"
+                          disabled={!hasAccess(userTier, 'enthusiast')}
+                          className="w-full text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {!hasAccess(userTier, 'enthusiast') && <Lock className="w-3 h-3 mr-1" />}
+                          Manual
+                        </TabsTrigger>
+                        {!hasAccess(userTier, 'enthusiast') && (
+                          <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 pt-1 opacity-0 pointer-events-none group-hover/manual:opacity-100 group-hover/manual:pointer-events-auto transition-opacity duration-150">
+                            <div className="px-3 py-1.5 rounded-md bg-slate-800 border border-white/10 shadow-lg whitespace-nowrap">
+                              <span className="flex items-center gap-1.5 text-xs text-slate-300">
+                                <Lock className="w-3 h-3 text-slate-500" />
+                                Requires <span className="text-sky-400">Enthusiast</span>
+                                <span className="text-slate-600">&middot;</span>
+                                <a href="/Pricing" className="text-sky-400 hover:text-sky-300">Upgrade &rarr;</a>
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </TabsList>
                   </Tabs>
                 </div>
                 {/* Scrollable inputs */}
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+                <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden scrollbar-thin">
                   <FinanceInputs
                     values={values}
                     onChange={setValues}
                     selectedAircraft={selectedAircraft}
                     onAircraftSelect={handleAircraftSelect}
                     inputMode={inputMode}
+                    disabled={!hasAccess(userTier, 'enthusiast')}
                   />
                 </div>
-              </FeatureGate>
             </div>
 
             {/* Right Panel - Results */}

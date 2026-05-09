@@ -4,6 +4,8 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import AboutUs from "./pages/AboutUs";
 import ContactSales from "./pages/ContactSales";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import Layout from "./Layout.jsx";
 
 const AircraftComparison = lazy(() => import("./pages/AircraftComparison"));
@@ -43,6 +45,8 @@ export const PAGES = {
   Account,
   ResetPassword,
   UpdatePassword,
+  PrivacyPolicy,
+  TermsOfService,
 };
 
 export const pagesConfig = {

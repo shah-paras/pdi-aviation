@@ -20,7 +20,7 @@ export const TIERS = {
     btnVariant: 'outline',
     features: {
       'Compare Aircraft': [
-        { text: '1 aircraft, basic specs', active: true },
+        { text: '1 aircraft slot', active: true },
         { text: 'PDF export', active: false },
       ],
       'Range Map': [
@@ -28,8 +28,8 @@ export const TIERS = {
         { text: 'Select aircraft model', active: false },
       ],
       'Finance Calculator': [
-        { text: 'View sample output', active: true },
-        { text: 'Edit inputs', active: false },
+        { text: 'Pre-selected demo aircraft', active: true },
+        { text: 'Edit inputs & manual mode', active: false },
       ],
       'Fleet Directory': [{ text: 'All 137 operators', active: true }],
     },
@@ -48,8 +48,8 @@ export const TIERS = {
     btnVariant: 'blue',
     features: {
       'Compare Aircraft': [
-        { text: '2 aircraft, full specs', active: true },
-        { text: 'PDF export', active: true },
+        { text: '3 aircraft, full specs', active: true },
+        { text: 'PDF export', active: false },
       ],
       'Range Map': [
         { text: 'Any aircraft + any origin', active: true },
@@ -59,6 +59,7 @@ export const TIERS = {
       'Finance Calculator': [
         { text: 'All inputs editable', active: true },
         { text: 'Full cost breakdown', active: true },
+        { text: 'PDF & CSV export', active: false },
       ],
       'Fleet Directory': [
         { text: 'All 137 operators', active: true },
@@ -79,10 +80,8 @@ export const TIERS = {
     btnVariant: 'purple',
     features: {
       'Compare Aircraft': [
-        { text: '2 aircraft, full specs', active: true },
-        { text: 'PDF export', active: true },
-        { text: '3rd comparison slot', active: true, isNew: true },
-        { text: 'Save & revisit comparisons', active: true, isNew: true },
+        { text: '3 aircraft, full specs', active: true },
+        { text: 'PDF export', active: true, isNew: true },
       ],
       'Range Map': [
         { text: 'Any aircraft + any origin', active: true },
@@ -93,6 +92,7 @@ export const TIERS = {
       'Finance Calculator': [
         { text: 'All inputs editable', active: true },
         { text: 'Full cost breakdown', active: true },
+        { text: 'PDF & CSV export', active: true, isNew: true },
       ],
       'Fleet Directory': [
         { text: 'All 137 operators', active: true },
@@ -106,10 +106,9 @@ export const TIERS = {
 
 export const COMPARISON_ROWS = [
   { section: 'Aircraft Comparison' },
-  { label: 'Aircraft slots', values: ['1', '2', '3'] },
-  { label: 'Full spec sheet', values: [false, true, true] },
-  { label: 'PDF export', values: [false, true, true] },
-  { label: 'Save comparisons', values: [false, false, 'purple'] },
+  { label: 'Aircraft slots', values: ['1', '3', '3'] },
+  { label: 'Full spec sheet', values: [true, true, true] },
+  { label: 'PDF export', values: [false, false, 'purple'] },
   { section: 'Range Map' },
   { label: 'Select aircraft model', values: [false, true, true] },
   { label: '50% range ring', values: [false, true, true] },
@@ -117,6 +116,8 @@ export const COMPARISON_ROWS = [
   { section: 'Finance Calculator' },
   { label: 'Edit inputs', values: [false, true, true] },
   { label: 'Amortisation schedule', values: [false, true, true] },
+  { label: 'PDF export', values: [false, false, 'purple'] },
+  { label: 'CSV export', values: [false, false, 'purple'] },
   { section: 'Fleet Directory' },
   { label: 'Operators visible', values: ['All 137', 'All 137', 'All 137'] },
   { label: 'CSV export', values: [false, false, 'purple'] },
@@ -186,9 +187,8 @@ export function hasAccess(userTier, requiredTier) {
 export const TIER_LIMITS = {
   curious: {
     comparisonSlots: 1,
-    comparisonFullSpecs: false,
+    comparisonFullSpecs: true,
     comparisonPdfExport: false,
-    comparisonSave: false,
     rangeSelectModel: false,
     rangeSelectOrigin: false,
     rangeRings50: false,
@@ -200,10 +200,9 @@ export const TIER_LIMITS = {
     marketReports: false,
   },
   enthusiast: {
-    comparisonSlots: 2,
+    comparisonSlots: 3,
     comparisonFullSpecs: true,
-    comparisonPdfExport: true,
-    comparisonSave: false,
+    comparisonPdfExport: false,
     rangeSelectModel: true,
     rangeSelectOrigin: true,
     rangeRings50: true,
@@ -218,12 +217,13 @@ export const TIER_LIMITS = {
     comparisonSlots: 3,
     comparisonFullSpecs: true,
     comparisonPdfExport: true,
-    comparisonSave: true,
     rangeSelectModel: true,
     rangeSelectOrigin: true,
     rangeRings50: true,
     rangeMultiCity: true,
     financeEditInputs: true,
+    financePdfExport: true,
+    financeCsvExport: true,
     fleetSearchFilter: true,
     fleetCsvExport: true,
     blogArticlesPerMonth: Infinity,

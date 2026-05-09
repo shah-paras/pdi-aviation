@@ -3,12 +3,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Percent, Fuel, Shield, Plane, Search, ChevronDown, RefreshCw } from 'lucide-react';
+import { Percent, Fuel, Shield, Plane, Search, ChevronDown, RefreshCw, Lock } from 'lucide-react';
 import { useCurrency } from '@/hooks/use-currency';
 import { getCurrencyMeta } from '@/lib/currency-config';
 import { AIRCRAFT_DATA, AIRCRAFT_CATEGORIES } from '@/data/aircraftFinanceData';
 
-export default function FinanceInputs({ values, onChange, selectedAircraft, onAircraftSelect, inputMode = 'aircraft' }) {
+export default function FinanceInputs({ values, onChange, selectedAircraft, onAircraftSelect, inputMode = 'aircraft', disabled = false }) {
   const { currencySymbol, selectedCurrency, reverseConvertAmount, convertAmount } = useCurrency();
   const meta = getCurrencyMeta(selectedCurrency);
   const [rawInputs, setRawInputs] = useState({});
@@ -68,9 +68,9 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Plane className="w-5 h-5 text-sky-400" />
-              <h3 className="font-semibold text-white">Select Aircraft</h3>
+              <h3 className="font-semibold text-white">{disabled ? 'Aircraft' : 'Select Aircraft'}</h3>
             </div>
-            {selectedAircraft && !aircraftExpanded && (
+            {!disabled && selectedAircraft && !aircraftExpanded && (
               <button
                 type="button"
                 onClick={() => setAircraftExpanded(true)}
@@ -82,27 +82,28 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
           </div>
 
           {/* Collapsed: show selected aircraft summary */}
-          {selectedAircraft && !aircraftExpanded && (
-            <button
-              type="button"
-              onClick={() => setAircraftExpanded(true)}
-              className="w-full text-left p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/15 transition-colors group"
+          {selectedAircraft && (disabled || !aircraftExpanded) && (
+            <div
+              className={`w-full text-left p-3 rounded-lg bg-sky-500/10 border border-sky-500/20 ${disabled ? '' : 'hover:bg-sky-500/15 cursor-pointer'} transition-colors group`}
+              onClick={disabled ? undefined : () => setAircraftExpanded(true)}
             >
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium text-sky-300">{selectedAircraft.name}</div>
-                <ChevronDown className="w-4 h-4 text-slate-500 group-hover:text-slate-400 transition-colors" />
-              </div>
-              <div className="text-xs text-slate-400 mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5">
-                <span>{selectedAircraft.passengers} pax</span>
-                <span>{selectedAircraft.rangeNm.toLocaleString()} nm</span>
-                <span>{selectedAircraft.speedKtas} ktas</span>
-                <span>{selectedAircraft.fuelBurnGPH} gal/hr</span>
-              </div>
-            </button>
+              <div className="text-sm font-medium text-sky-300">{selectedAircraft.name}</div>
+              {!disabled && (
+                <div className="flex items-center justify-between mt-1">
+                  <div className="text-xs text-slate-400 grid grid-cols-2 gap-x-3 gap-y-0.5">
+                    <span>{selectedAircraft.passengers} pax</span>
+                    <span>{selectedAircraft.rangeNm.toLocaleString()} nm</span>
+                    <span>{selectedAircraft.speedKtas} ktas</span>
+                    <span>{selectedAircraft.fuelBurnGPH} gal/hr</span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-slate-500 group-hover:text-slate-400 transition-colors" />
+                </div>
+              )}
+            </div>
           )}
 
           {/* Expanded: search + list */}
-          {(aircraftExpanded || !selectedAircraft) && (
+          {!disabled && (aircraftExpanded || !selectedAircraft) && (
             <>
               <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -151,6 +152,18 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
         </div>
       )}
 
+      <div className={disabled ? 'relative' : ''}>
+      {disabled && (
+        <div className="sticky top-0 z-10 mx-auto mb-4 flex flex-col items-center text-center bg-slate-900/95 border border-white/10 rounded-xl px-5 py-4 shadow-lg backdrop-blur-sm">
+          <Lock className="w-5 h-5 text-slate-400 mb-2" />
+          <p className="text-sm text-white font-medium mb-1">Select multiple aircraft & edit costs</p>
+          <p className="text-xs text-slate-400 mb-3">Upgrade to compare jets, customise loan terms, operating costs, and fuel estimates</p>
+          <a href="/Pricing" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-600 text-white text-sm font-medium transition-colors">
+            Upgrade now &rarr;
+          </a>
+        </div>
+      )}
+      <div className={disabled ? 'blur-[2px] pointer-events-none select-none space-y-6' : 'space-y-6'}>
       {/* Purchase Price */}
       <div className="bg-white/5 backdrop-blur-sm rounded-xl border border-white/10 p-5">
         <div className="flex items-center gap-2 mb-4">
@@ -185,6 +198,7 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
         </div>
 
         <div className="space-y-5">
+          {/* Slider: Down Payment */}
           <div>
             <div className="flex justify-between mb-1.5">
               <Label className="text-sm text-slate-300">Down Payment</Label>
@@ -193,36 +207,42 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
             <Slider
               value={[values.downPaymentPercent]}
               onValueChange={([v]) => handleChange('downPaymentPercent', v)}
-              min={10}
+              min={20}
               max={50}
-              step={5}
+              step={1}
             />
             <div className="text-xs text-slate-400 mt-1">
               {isManual ? currencySymbol : '$'}{displayValue(values.purchasePrice * values.downPaymentPercent / 100)}
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <Label className="text-sm text-slate-300 mb-1.5 block">Loan Term (Years)</Label>
-              <Select value={values.loanTermYears.toString()} onValueChange={(v) => handleChange('loanTermYears', parseInt(v))}>
-                <SelectTrigger className="bg-slate-900 border-slate-800 text-slate-200">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[5, 7, 10, 12, 15, 20].map(y => (
-                    <SelectItem key={y} value={y.toString()}>{y} Years</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Slider: Loan Term */}
+          <div>
+            <div className="flex justify-between mb-1.5">
+              <Label className="text-sm text-slate-300">Loan Term</Label>
+              <span className="text-sm font-medium text-sky-400">{values.loanTermYears} yrs</span>
             </div>
+            <Slider
+              value={[values.loanTermYears]}
+              onValueChange={([v]) => handleChange('loanTermYears', v)}
+              min={1}
+              max={10}
+              step={1}
+            />
+            <div className="text-xs text-slate-400 mt-1">
+              {values.loanTermYears * 12} monthly payments
+            </div>
+          </div>
+
+          {/* Row: Interest Rate + Loan Type */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="flex items-center gap-1.5 mb-1.5">
-                <Label className="text-sm text-slate-300">Interest Rate (%)</Label>
+                <Label className="text-xs text-slate-300">Interest Rate</Label>
                 <div className="group relative">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5 text-slate-500 cursor-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 text-slate-500 cursor-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                   <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300 whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-10">
-                    Aviation rates typically range 6–12%
+                    Aviation rates typically 6–12%
                   </div>
                 </div>
               </div>
@@ -233,7 +253,7 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
                 return (
                   <>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">%</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">%</span>
                       <Input
                         type="text"
                         inputMode="decimal"
@@ -259,42 +279,40 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
                       />
                     </div>
                     {isError && (
-                      <p className="text-xs text-red-400 mt-1">Must be between 6% and 12%</p>
+                      <p className="text-xs text-red-400 mt-1">6–12%</p>
                     )}
                   </>
                 );
               })()}
             </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm text-slate-300 mb-1.5 block">Loan Type</Label>
+              <Label className="text-xs text-slate-300 mb-1.5 block">Loan Type</Label>
               <Select value={values.loanType} onValueChange={(v) => handleChange('loanType', v)}>
                 <SelectTrigger className="bg-slate-900 border-slate-800 text-slate-200">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="amortizing">Fully Amortizing</SelectItem>
-                  <SelectItem value="balloon">Balloon/Residual</SelectItem>
+                  <SelectItem value="amortizing">Amortizing</SelectItem>
+                  <SelectItem value="balloon">Balloon</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {values.loanType === 'balloon' && (
-              <div>
-                <Label className="text-sm text-slate-300 mb-1.5 block">Residual Value (%)</Label>
-                <Input
-                  type="number"
-                  step="5"
-                  min="0"
-                  max="50"
-                  value={values.residualPercent}
-                  onChange={(e) => handleChange('residualPercent', parseFloat(e.target.value) || 0)}
-                  className="bg-slate-900 border-slate-800 text-slate-200"
-                />
-              </div>
-            )}
           </div>
+
+          {values.loanType === 'balloon' && (
+            <div>
+              <Label className="text-sm text-slate-300 mb-1.5 block">Residual Value (%)</Label>
+              <Input
+                type="number"
+                step="5"
+                min="0"
+                max="50"
+                value={values.residualPercent}
+                onChange={(e) => handleChange('residualPercent', parseFloat(e.target.value) || 0)}
+                className="bg-slate-900 border-slate-800 text-slate-200"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -513,6 +531,8 @@ export default function FinanceInputs({ values, onChange, selectedAircraft, onAi
             Annual total: {isManual ? currencySymbol : '$'}{displayValue(values.landingFeesPerTrip * values.tripsPerYear)}
           </p>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   );

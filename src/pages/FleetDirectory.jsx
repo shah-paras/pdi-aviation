@@ -6,7 +6,10 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useOperators } from '@/hooks/useOperators';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Download, Lock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTierLimits } from '@/hooks/useTierLimits';
+import { hasAccess } from '@/config/tiers';
 
 import FleetHero from '@/components/fleet/FleetHero';
 import FleetDirectoryStats from '@/components/fleet/FleetDirectoryStats';
@@ -94,6 +97,7 @@ function generatePageNumbers(current, total) {
 
 export default function FleetDirectory() {
   const { data: operators = [], isLoading: dataLoading } = useOperators();
+  const { tier: userTier } = useTierLimits();
 
   // Derive registrations from operators fleet data
   const registrations = useMemo(
@@ -232,6 +236,32 @@ export default function FleetDirectory() {
     setModalOperator(operator);
   }, []);
 
+  const handleExportFleetCSV = useCallback(() => {
+    const lines = [];
+    lines.push(['Operator', 'City', 'State', 'AOP No.', 'Valid Until', 'Registration', 'Model', 'Type', 'Seats']);
+    for (const op of operators) {
+      const fleet = op.fleet || op.aircraft_fleet || [];
+      if (fleet.length === 0) {
+        lines.push([op.name, op.city, op.state, op.aopNo, op.validUpto, '', '', '', '']);
+      } else {
+        for (const ac of fleet) {
+          lines.push([
+            `"${op.name}"`, op.city, op.state, `"${op.aopNo || ''}"`, op.validUpto || '',
+            ac.registration || '', `"${ac.model || ''}"`, ac.type || '',
+            ac.seatingCapacity ?? ac.seating_capacity ?? '',
+          ]);
+        }
+      }
+    }
+    const csvContent = lines.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pdi-aviation-fleet-directory.csv';
+    a.click();
+  }, [operators]);
+
   if (dataLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -272,6 +302,32 @@ export default function FleetDirectory() {
           </p>
 
           <div className="flex items-center gap-3">
+            {/* Download CSV */}
+            <div className="relative group/fleet-csv">
+              <Button
+                onClick={hasAccess(userTier, 'insider') ? handleExportFleetCSV : undefined}
+                disabled={!hasAccess(userTier, 'insider')}
+                size="sm"
+                className="bg-sky-600 hover:bg-sky-700 text-white text-xs disabled:opacity-40 h-9 sm:h-8"
+              >
+                {!hasAccess(userTier, 'insider') && <Lock className="w-3 h-3 mr-1" />}
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                Download CSV
+              </Button>
+              {!hasAccess(userTier, 'insider') && (
+                <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 pt-1 opacity-0 pointer-events-none group-hover/fleet-csv:opacity-100 group-hover/fleet-csv:pointer-events-auto transition-opacity duration-150">
+                  <div className="px-3 py-1.5 rounded-md bg-slate-800 border border-white/10 shadow-lg whitespace-nowrap">
+                    <span className="flex items-center gap-1.5 text-xs text-slate-300">
+                      <Lock className="w-3 h-3 text-slate-500" />
+                      Requires <span className="text-violet-400">Insider</span>
+                      <span className="text-slate-600">&middot;</span>
+                      <a href="/Pricing" className="text-sky-400 hover:text-sky-300">Upgrade &rarr;</a>
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* State filter dropdown */}
             <Select value={selectedState} onValueChange={setSelectedState}>
               <SelectTrigger className="bg-white/5 border-white/10 text-slate-300 text-xs h-9 sm:h-8 flex-1 sm:flex-none sm:w-[160px]">

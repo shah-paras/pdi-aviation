@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Map as MapIcon, Plane, MapPin, X,
-  Target, Ruler, Info, Layers, Plus
+  Target, Ruler, Info, Layers, Plus, Lock
 } from 'lucide-react';
 import AircraftSearchSelect from '@/components/range-map/AircraftSearchSelect';
 import AirportSearchSelect from '@/components/range-map/AirportSearchSelect';
@@ -25,6 +25,8 @@ import {
 } from '@/lib/utils/mapUtils';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useAircraftModels } from '@/hooks/useAircraftModels';
+import { useTierLimits } from '@/hooks/useTierLimits';
+import { hasAccess } from '@/config/tiers';
 
 // Top-down jet silhouette SVG with glow halo (points north/up by default)
 const RING_COLORS = ['#EF4444', '#F87171'];
@@ -64,6 +66,7 @@ const JET_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" 
 
 export default function RangeMap() {
   const { data: aircraftModels = [] } = useAircraftModels();
+  const { tier: userTier } = useTierLimits();
 
   const [origin, setOrigin] = useState({ code: 'DEL', name: 'Indira Gandhi International Airport', lat: 28.5665, lng: 77.1031 });
   const [selectedAircraftId, setSelectedAircraftId] = useState('');
@@ -574,85 +577,92 @@ export default function RangeMap() {
       }
     });
 
-    // Fit map to all stops
-    if (allStops.length > 1) {
-      const lngs = allStops.map(s => s.lng);
-      const lats = allStops.map(s => s.lat);
-      map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 80, duration: 1000 });
-    }
-
     setMultiPlotted(true);
 
-    // Capture base zoom for animation speed scaling
-    const multiBaseZoom = map.getZoom();
-
-    if (reducedMotion || allArcCoords.length === 0) return;
-
-    // Create jet marker
-    const jetContainer = document.createElement('div');
-    jetContainer.style.cssText = 'width:48px;height:48px;';
-    const jetInner = document.createElement('div');
-    jetInner.innerHTML = JET_SVG;
-    jetInner.style.cssText = 'width:48px;height:48px;will-change:transform;';
-    jetContainer.appendChild(jetInner);
-    const jetMarker = new mapboxgl.Marker({ element: jetContainer, anchor: 'center' })
-      .setLngLat(allArcCoords[0][0])
-      .addTo(map);
-    mfa.jetMarker = jetMarker;
-
-    const FLIGHT_DURATION_MS = 8000;
-    const HOLD_MS = 1000;
-    let legIdx = 0;
-    let startTime = null;
-    let holding = false;
-    let holdStart = null;
-
-    const lerpCoord = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
-
-    const animateMulti = (timestamp) => {
-      const arcCoords = allArcCoords[legIdx];
-      const endIdx = arcCoords.length - 1;
-
-      if (!startTime) startTime = timestamp;
-
-      // Scale duration based on zoom: higher zoom = slower animation to maintain visual speed
-      const currentZoom = map.getZoom();
-      const zoomScale = Math.pow(2, currentZoom - multiBaseZoom);
-      const adjustedDuration = FLIGHT_DURATION_MS * Math.max(zoomScale, 0.5);
-
-      if (holding) {
-        if (timestamp - holdStart >= HOLD_MS) {
-          holding = false;
-          legIdx = (legIdx + 1) % allArcCoords.length;
-          startTime = timestamp;
-        }
-      } else {
-        const tLinear = Math.min((timestamp - startTime) / adjustedDuration, 1);
-        const t = tLinear < 0.5
-          ? 4 * tLinear * tLinear * tLinear
-          : 1 - Math.pow(-2 * tLinear + 2, 3) / 2;
-
-        const exactIdx = t * endIdx;
-        const floorIdx = Math.min(Math.floor(exactIdx), endIdx);
-        const ceilIdx = Math.min(floorIdx + 1, endIdx);
-        const frac = exactIdx - floorIdx;
-        const currentPos = floorIdx === ceilIdx ? arcCoords[floorIdx] : lerpCoord(arcCoords[floorIdx], arcCoords[ceilIdx], frac);
-
-        jetMarker.setLngLat(currentPos);
-        const lookAheadIdx = Math.min(ceilIdx + 1, endIdx);
-        const bearing = calculateBearing(currentPos[0], currentPos[1], arcCoords[lookAheadIdx][0], arcCoords[lookAheadIdx][1]);
-        jetInner.style.transform = `rotate(${bearing}deg)`;
-
-        if (tLinear >= 1) {
-          holding = true;
-          holdStart = timestamp;
-        }
+    if (reducedMotion || allArcCoords.length === 0) {
+      if (allStops.length > 1) {
+        const lngs = allStops.map(s => s.lng);
+        const lats = allStops.map(s => s.lat);
+        map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 80, duration: 1000 });
       }
+      return;
+    }
+
+    const startAnimation = () => {
+      const jetContainer = document.createElement('div');
+      jetContainer.style.cssText = 'width:48px;height:48px;';
+      const jetInner = document.createElement('div');
+      jetInner.innerHTML = JET_SVG;
+      jetInner.style.cssText = 'width:48px;height:48px;will-change:transform;';
+      jetContainer.appendChild(jetInner);
+      const jetMarker = new mapboxgl.Marker({ element: jetContainer, anchor: 'center' })
+        .setLngLat(allArcCoords[0][0])
+        .addTo(map);
+      mfa.jetMarker = jetMarker;
+
+      const multiBaseZoom = map.getZoom();
+      const FLIGHT_DURATION_MS = 8000;
+      const HOLD_MS = 1000;
+      let legIdx = 0;
+      let startTime = null;
+      let holding = false;
+      let holdStart = null;
+
+      const lerpCoord = (a, b, f) => [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+
+      const animateMulti = (timestamp) => {
+        const arcCoords = allArcCoords[legIdx];
+        const endIdx = arcCoords.length - 1;
+
+        if (!startTime) startTime = timestamp;
+
+        const currentZoom = map.getZoom();
+        const zoomScale = Math.pow(2, currentZoom - multiBaseZoom);
+        const adjustedDuration = FLIGHT_DURATION_MS * Math.max(zoomScale, 0.5);
+
+        if (holding) {
+          if (timestamp - holdStart >= HOLD_MS) {
+            holding = false;
+            legIdx = (legIdx + 1) % allArcCoords.length;
+            startTime = timestamp;
+          }
+        } else {
+          const tLinear = Math.min((timestamp - startTime) / adjustedDuration, 1);
+          const t = tLinear < 0.5
+            ? 4 * tLinear * tLinear * tLinear
+            : 1 - Math.pow(-2 * tLinear + 2, 3) / 2;
+
+          const exactIdx = t * endIdx;
+          const floorIdx = Math.min(Math.floor(exactIdx), endIdx);
+          const ceilIdx = Math.min(floorIdx + 1, endIdx);
+          const frac = exactIdx - floorIdx;
+          const currentPos = floorIdx === ceilIdx ? arcCoords[floorIdx] : lerpCoord(arcCoords[floorIdx], arcCoords[ceilIdx], frac);
+
+          jetMarker.setLngLat(currentPos);
+          const lookAheadIdx = Math.min(ceilIdx + 1, endIdx);
+          const bearing = calculateBearing(currentPos[0], currentPos[1], arcCoords[lookAheadIdx][0], arcCoords[lookAheadIdx][1]);
+          jetInner.style.transform = `rotate(${bearing}deg)`;
+
+          if (tLinear >= 1) {
+            holding = true;
+            holdStart = timestamp;
+          }
+        }
+
+        mfa.animId = requestAnimationFrame(animateMulti);
+      };
 
       mfa.animId = requestAnimationFrame(animateMulti);
     };
 
-    mfa.animId = requestAnimationFrame(animateMulti);
+    if (allStops.length > 1) {
+      const lngs = allStops.map(s => s.lng);
+      const lats = allStops.map(s => s.lat);
+      map.fitBounds([[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]], { padding: 80, duration: 1000 });
+      map.once('moveend', startAnimation);
+    } else {
+      startAnimation();
+    }
   }, [multiOrigin, multiAircraft, multiWaypoints, multiLegStatuses, reducedMotion]);
 
   // Cleanup multi-region animation when switching away from multi tab
@@ -672,9 +682,12 @@ export default function RangeMap() {
     <div className="h-[calc(100vh-3.5rem)] lg:h-[calc(100vh-4rem)] bg-slate-950 flex flex-col lg:flex-row overflow-hidden">
       {/* Left Control Panel */}
       <div className="lg:w-96 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 border-r border-slate-800 flex-shrink-0 overflow-y-auto max-h-[40vh] lg:max-h-full">
-        <Tabs value={activeMapTab} onValueChange={setActiveMapTab} className="flex flex-col h-full">
+        <Tabs value={activeMapTab} onValueChange={(tab) => {
+          if (tab === 'multi' && !hasAccess(userTier, 'insider')) return;
+          setActiveMapTab(tab);
+        }} className="flex flex-col h-full">
           {/* Header + Tab switcher */}
-          <div className="p-4 border-b border-slate-800">
+          <div className="p-4 border-b border-slate-800 overflow-visible relative z-20">
             <div className="flex items-center gap-2.5 mb-3">
               <MapIcon className="w-4 h-4 text-sky-400" />
               <h1 className="text-lg font-semibold text-white">Range Map</h1>
@@ -683,9 +696,28 @@ export default function RangeMap() {
               <TabsTrigger value="single" className="flex-1 text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
                 Single Route
               </TabsTrigger>
-              <TabsTrigger value="multi" className="flex-1 text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400">
-                Multi-Region
-              </TabsTrigger>
+              <div className="relative flex-1 group/multi">
+                <TabsTrigger
+                  value="multi"
+                  disabled={!hasAccess(userTier, 'insider')}
+                  className="w-full text-xs data-[state=active]:bg-slate-700 data-[state=active]:text-white text-slate-400 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {!hasAccess(userTier, 'insider') && <Lock className="w-3 h-3 mr-1" />}
+                  Multi-Region
+                </TabsTrigger>
+                {!hasAccess(userTier, 'insider') && (
+                  <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 pt-1 opacity-0 pointer-events-none group-hover/multi:opacity-100 group-hover/multi:pointer-events-auto transition-opacity duration-150">
+                    <div className="px-3 py-1.5 rounded-md bg-slate-800 border border-white/10 shadow-lg whitespace-nowrap">
+                      <span className="flex items-center gap-1.5 text-xs text-slate-300">
+                        <Lock className="w-3 h-3 text-slate-500" />
+                        Requires <span className="text-violet-400">Insider</span>
+                        <span className="text-slate-600">&middot;</span>
+                        <a href="/Pricing" className="text-sky-400 hover:text-sky-300">Upgrade &rarr;</a>
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </TabsList>
           </div>
 

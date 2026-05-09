@@ -140,7 +140,7 @@ export default function Home() {
                 width={1600}
                 height={900}
                 fetchPriority="high"
-                className="aspect-[16/10] rounded-2xl shadow-2xl shadow-black/40 object-cover w-full"
+                className="aspect-[16/10] rounded-2xl shadow-2xl shadow-black/40 object-cover object-left-top w-full"
               />
 
               {/* Floating stat badge */}
@@ -248,19 +248,19 @@ export default function Home() {
               })}
             >
               <div className="relative">
-                <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl">
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                   <img
-                    src="/pdi-why-choose.png"
-                    alt="VT-PDI jet at Mumbai airport"
+                    src="/about-runway.jpeg"
+                    alt="VT-PDI jet on Mumbai runway"
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
                 </div>
-                <div className="absolute -bottom-6 -right-6 w-32 h-24 rounded-xl overflow-hidden shadow-xl border-2 border-slate-950 hidden lg:block">
+                <div className="absolute -bottom-5 -right-5 w-20 h-20 rounded-xl overflow-hidden shadow-xl border-2 border-slate-950 bg-slate-900 flex items-center justify-center hidden lg:flex">
                   <img
-                    src="/about-jet.jpeg"
-                    alt="Aircraft detail"
-                    className="w-full h-full object-cover"
+                    src="/pdi-logo.png"
+                    alt="PDI Aviation"
+                    className="w-14 h-14 object-contain"
                     loading="lazy"
                   />
                 </div>

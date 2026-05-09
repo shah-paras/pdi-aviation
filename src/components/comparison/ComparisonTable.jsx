@@ -1,10 +1,9 @@
 import { useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Plane,
   Gauge,
   Ruler,
-  DollarSign,
   Navigation,
   Zap,
   Users,
@@ -12,8 +11,6 @@ import {
   BarChart3,
   Trophy,
 } from 'lucide-react';
-import { useCurrency } from '@/hooks/use-currency';
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -40,7 +37,7 @@ function fmtNum(value, unit = '') {
 // Spec section definitions
 // ---------------------------------------------------------------------------
 
-function buildSections(formatPrice) {
+function buildSections() {
   return [
     {
       title: 'Performance',
@@ -104,30 +101,9 @@ function buildSections(formatPrice) {
       ],
     },
     {
-      title: 'Pricing',
-      icon: DollarSign,
+      title: 'Status',
+      icon: BarChart3,
       rows: [
-        {
-          label: 'New Price',
-          key: 'new_price_usd',
-          format: v => (typeof v === 'number' ? formatPrice(v) : 'N/A'),
-          best: 'min',
-          icon: DollarSign,
-        },
-        {
-          label: 'Pre-Owned Low',
-          key: 'preowned_price_low_usd',
-          format: v => (typeof v === 'number' ? formatPrice(v) : 'N/A'),
-          best: 'min',
-          icon: DollarSign,
-        },
-        {
-          label: 'Pre-Owned High',
-          key: 'preowned_price_high_usd',
-          format: v => (typeof v === 'number' ? formatPrice(v) : 'N/A'),
-          best: null,
-          icon: DollarSign,
-        },
         {
           label: 'Production Status',
           key: 'production_status',
@@ -170,18 +146,11 @@ function EmptyState() {
   );
 }
 
-function AircraftHeader({ model, index }) {
+function AircraftHeader({ model }) {
   return (
-    <motion.th
-      key={model.id}
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ delay: index * 0.05 }}
-      className="px-4 py-5 text-center align-top"
-    >
+    <th className="px-4 py-5 text-center align-top">
       <div className="flex flex-col items-center gap-3">
-        {model.thumbnail_url ? (
+        {/* {model.thumbnail_url ? (
           <img
             src={model.thumbnail_url}
             alt={`${model.manufacturer} ${model.model}`}
@@ -192,7 +161,7 @@ function AircraftHeader({ model, index }) {
           <div className="w-28 h-16 bg-gradient-to-br from-slate-800 to-slate-700 rounded-lg flex items-center justify-center border border-white/10">
             <Plane className="w-7 h-7 text-slate-400" />
           </div>
-        )}
+        )} */}
         <div>
           <div className="font-semibold text-white text-sm leading-tight">
             {model.manufacturer}
@@ -205,7 +174,7 @@ function AircraftHeader({ model, index }) {
           </span>
         </div>
       </div>
-    </motion.th>
+    </th>
   );
 }
 
@@ -228,18 +197,13 @@ function SectionHeading({ section, colCount }) {
   );
 }
 
-function SpecRow({ row, models, rowIndex }) {
+function SpecRow({ row, models }) {
   const values = models.map(m => m[row.key]);
   const best = row.best ? bestIndices(values, row.best) : values.map(() => false);
   const Icon = row.icon;
 
   return (
-    <motion.tr
-      initial={{ opacity: 0, x: -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.02 * rowIndex }}
-      className="border-t border-white/5 hover:bg-white/5 transition-colors"
-    >
+    <tr className="border-t border-white/5 hover:bg-white/5 transition-colors">
       <td className="px-4 py-3 text-sm text-slate-300 font-medium whitespace-nowrap">
         <div className="flex items-center gap-2">
           <Icon className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
@@ -256,7 +220,7 @@ function SpecRow({ row, models, rowIndex }) {
           )}
         </td>
       ))}
-    </motion.tr>
+    </tr>
   );
 }
 
@@ -265,8 +229,6 @@ function SpecRow({ row, models, rowIndex }) {
 // ---------------------------------------------------------------------------
 
 export default function ComparisonTable({ selectedAircraft, aircraft }) {
-  const { formatPrice } = useCurrency();
-
   const models = useMemo(
     () =>
       selectedAircraft
@@ -275,7 +237,7 @@ export default function ComparisonTable({ selectedAircraft, aircraft }) {
     [selectedAircraft, aircraft]
   );
 
-  const sections = useMemo(() => buildSections(formatPrice), [formatPrice]);
+  const sections = useMemo(() => buildSections(), []);
 
   if (models.length === 0) {
     return (
@@ -313,11 +275,9 @@ export default function ComparisonTable({ selectedAircraft, aircraft }) {
           <thead>
             <tr className="border-b border-white/10 bg-slate-900/50">
               <th className="px-4 py-5" />
-              <AnimatePresence mode="popLayout">
-                {models.map((m, i) => (
-                  <AircraftHeader key={m.id} model={m} index={i} />
-                ))}
-              </AnimatePresence>
+              {models.map((m) => (
+                <AircraftHeader key={m.id} model={m} />
+              ))}
             </tr>
           </thead>
 
@@ -332,12 +292,11 @@ export default function ComparisonTable({ selectedAircraft, aircraft }) {
             return (
               <tbody key={section.title}>
                 <SectionHeading section={section} colCount={models.length} />
-                {section.rows.map((row, ri) => (
+                {section.rows.map((row) => (
                   <SpecRow
                     key={row.key}
                     row={row}
                     models={models}
-                    rowIndex={ri}
                   />
                 ))}
               </tbody>

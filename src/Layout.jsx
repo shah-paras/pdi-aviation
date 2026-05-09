@@ -14,7 +14,7 @@ export default function Layout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
-  const showFooter = ['/', '/AboutUs'].includes(location.pathname);
+  const showFooter = ['/', '/AboutUs', '/PrivacyPolicy', '/TermsOfService'].includes(location.pathname);
 
   useEffect(() => {
     let ticking = false;
@@ -195,8 +195,8 @@ export default function Layout({ children }) {
             <div className="border-t border-slate-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
               <p>© {new Date().getFullYear()} PDI Aviation. All rights reserved.</p>
               <div className="flex gap-6">
-                <span className="hover:text-white cursor-pointer transition-colors">Privacy Policy</span>
-                <span className="hover:text-white cursor-pointer transition-colors">Terms of Service</span>
+                <Link to="/PrivacyPolicy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                <Link to="/TermsOfService" className="hover:text-white transition-colors">Terms of Service</Link>
               </div>
             </div>
           </div>
