@@ -1162,12 +1162,12 @@ export default function BlogPost() {
 
       {/* Content — scrolls over hero */}
       <div className="relative z-10 bg-slate-950">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex gap-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+        <div>
           {/* Article */}
-          <article className="flex-1 min-w-0">
-            <div 
-              className="prose prose-lg prose-slate prose-invert max-w-none prose-headings:font-bold prose-a:text-sky-400 prose-img:rounded-xl"
+          <article className="min-w-0">
+            <div
+              className="blog-article"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
