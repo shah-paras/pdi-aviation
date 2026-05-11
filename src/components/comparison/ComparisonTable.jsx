@@ -10,6 +10,7 @@ import {
   Wind,
   BarChart3,
   Trophy,
+  DollarSign,
 } from 'lucide-react';
 // ---------------------------------------------------------------------------
 // Helpers
@@ -33,12 +34,44 @@ function fmtNum(value, unit = '') {
   return unit ? `${formatted} ${unit}` : formatted;
 }
 
+function fmtUsd(value) {
+  if (value == null || value === '' || Number.isNaN(value)) return 'N/A';
+  return `$${Number(value).toLocaleString()}`;
+}
+
 // ---------------------------------------------------------------------------
 // Spec section definitions
 // ---------------------------------------------------------------------------
 
 function buildSections() {
   return [
+    {
+      title: 'Pricing',
+      icon: DollarSign,
+      rows: [
+        {
+          label: 'New Price',
+          key: 'new_price_usd',
+          format: v => fmtUsd(v),
+          best: 'min',
+          icon: DollarSign,
+        },
+        {
+          label: 'Pre-Owned Low',
+          key: 'preowned_price_low_usd',
+          format: v => fmtUsd(v),
+          best: 'min',
+          icon: DollarSign,
+        },
+        {
+          label: 'Pre-Owned High',
+          key: 'preowned_price_high_usd',
+          format: v => fmtUsd(v),
+          best: 'min',
+          icon: DollarSign,
+        },
+      ],
+    },
     {
       title: 'Performance',
       icon: Gauge,

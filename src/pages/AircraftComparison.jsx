@@ -93,6 +93,9 @@ export default function AircraftComparison() {
     const head = [['Spec', ...models.map(m => `${m.manufacturer} ${m.model}`)]];
     const body = [
       ['Category', ...models.map(m => m.category || 'N/A')],
+      ['New Price (USD)', ...models.map(m => m.new_price_usd ? `$${m.new_price_usd.toLocaleString()}` : 'N/A')],
+      ['Pre-Owned Low (USD)', ...models.map(m => m.preowned_price_low_usd ? `$${m.preowned_price_low_usd.toLocaleString()}` : 'N/A')],
+      ['Pre-Owned High (USD)', ...models.map(m => m.preowned_price_high_usd ? `$${m.preowned_price_high_usd.toLocaleString()}` : 'N/A')],
       ['Production Status', ...models.map(m => m.production_status || 'N/A')],
       ['Max Range (nm)', ...models.map(m => m.max_range_nm || 'N/A')],
       ['Cruise Speed (ktas)', ...models.map(m => m.cruise_speed_ktas || 'N/A')],
