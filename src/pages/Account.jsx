@@ -311,7 +311,9 @@ export default function Account() {
             </div>
 
             <div className="flex flex-col gap-2">
-              {isActive ? (
+              {isActive && subscription?.plan === 'lifetime' ? (
+                <span className="text-sm text-emerald-400">Lifetime access · no renewals</span>
+              ) : isActive ? (
                 <Button
                   onClick={openPortal}
                   disabled={portalLoading}

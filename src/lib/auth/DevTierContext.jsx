@@ -85,7 +85,7 @@ function DevTierSwitcher({ devTier, setDevTier }) {
                   <div className="text-base mb-0.5">{meta.icon}</div>
                   <div className="font-semibold text-[11px]">{meta.name}</div>
                   <div className="text-[9px] text-slate-500 mt-0.5">
-                    {meta.price.monthly ? `$${meta.price.monthly}/mo` : 'Free'}
+                    {meta.price ? `₹${meta.price} once` : 'Free'}
                   </div>
                 </button>
               );

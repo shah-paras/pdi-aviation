@@ -50,20 +50,16 @@ In Supabase Dashboard → **Authentication → Providers**:
 ## 4. Razorpay setup (India payments)
 
 1. https://dashboard.razorpay.com → sign up → complete KYC
-2. **Subscriptions → Plans → Create Plan** — create 6 plans (3 tiers × 2 billing cycles):
-   - **Enthusiast Monthly** (₹199/mo) → `RAZORPAY_PLAN_ENTHUSIAST_MONTHLY`
-   - **Enthusiast Annual** (₹1,990/yr) → `RAZORPAY_PLAN_ENTHUSIAST_ANNUAL`
-   - **Insider Monthly** (₹499/mo) → `RAZORPAY_PLAN_INSIDER_MONTHLY`
-   - **Insider Annual** (₹4,990/yr) → `RAZORPAY_PLAN_INSIDER_ANNUAL`
-   - **Superfan Monthly** (₹999/mo) → `RAZORPAY_PLAN_SUPERFAN_MONTHLY`
-   - **Superfan Annual** (₹9,990/yr) → `RAZORPAY_PLAN_SUPERFAN_ANNUAL`
+2. **No plan needed.** The only product is a one-time ₹999 **Lifetime** purchase. The
+   `create-razorpay-order` function creates a Razorpay **Order** with the amount fixed
+   server-side (`LIFETIME_PRICE_INR`, default `999`). Lifetime buyers get the `insider` tier.
 3. **Account & Settings → API Keys → Generate Key**:
    - Key ID → `VITE_RAZORPAY_KEY_ID`
    - Key Secret → `RAZORPAY_KEY_SECRET` (server-side only)
 4. **Account & Settings → Webhooks → Add**:
    - URL: `https://<project>.supabase.co/functions/v1/razorpay-webhook`
    - Secret: generate one and record it → `RAZORPAY_WEBHOOK_SECRET`
-   - Events: `subscription.activated`, `subscription.charged`, `subscription.cancelled`, `subscription.completed`, `subscription.halted`, `subscription.pending`
+   - Events: `order.paid` (keep the `subscription.*` events ticked only while legacy subscribers exist)
 
 ## 5. Deploy Edge Functions
 
@@ -87,12 +83,7 @@ supabase secrets set \
   RAZORPAY_KEY_ID=rzp_test_... \
   RAZORPAY_KEY_SECRET=... \
   RAZORPAY_WEBHOOK_SECRET=... \
-  RAZORPAY_PLAN_ENTHUSIAST_MONTHLY=plan_SfQbvrAx9RSBd0 \
-  RAZORPAY_PLAN_ENTHUSIAST_ANNUAL=plan_... \
-  RAZORPAY_PLAN_INSIDER_MONTHLY=plan_SfQcjPTbNlXnVc \
-  RAZORPAY_PLAN_INSIDER_ANNUAL=plan_... \
-  RAZORPAY_PLAN_SUPERFAN_MONTHLY=plan_SfQdtEpUHuSltp \
-  RAZORPAY_PLAN_SUPERFAN_ANNUAL=plan_... \
+  LIFETIME_PRICE_INR=999 \
   SITE_URL=http://localhost:3000
 
 # Deploy all functions
@@ -129,11 +120,11 @@ Only `VITE_*` vars reach the browser; everything else must stay in `supabase sec
 7. On `/Account` — badge shows tier name (e.g. "Enthusiast") with tier-specific color. Click "Manage billing" → Stripe Customer Portal.
 
 ### Razorpay (India flow)
-1. Visit `/Pricing`, select "India".
-2. Click Subscribe on any tier → Razorpay modal opens.
+1. Visit `/Pricing` (logged in).
+2. Click **Get lifetime access** → Razorpay modal opens for ₹999.
 3. Use test card `4111 1111 1111 1111`, CVV `100`, any future expiry, or test UPI `success@razorpay`.
 4. Complete payment → modal closes.
-5. Wait for webhook → `subscriptions` row updates to `status='active'`, `provider='razorpay'`, correct `tier`.
+5. Webhook `order.paid` → `subscriptions` row becomes `status='active'`, `plan='lifetime'`, `tier='insider'`, `provider='razorpay'`.
 6. Gated routes unlock. `/Account` shows correct tier badge.
 
 ### Tier testing matrix

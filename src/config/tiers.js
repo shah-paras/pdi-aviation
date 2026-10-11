@@ -4,6 +4,11 @@ export const TIER_ORDER = ['curious', 'enthusiast', 'insider'];
 
 export const PAID_TIERS = ['enthusiast', 'insider'];
 
+// The only plan on sale: a one-time lifetime purchase that unlocks the
+// top tier. Legacy 'enthusiast' stays defined so existing gating still works.
+export const LIFETIME_TIER = 'insider';
+export const LIFETIME_PRICE_INR = 999;
+
 // ─── Per-tier metadata ──────────────────────────────────────────────────────
 
 export const TIERS = {
@@ -14,7 +19,7 @@ export const TIERS = {
     iconBg: 'rgba(68,85,119,0.3)',
     accentColor: 'slate',
     dotColor: '#334466',
-    price: { monthly: null, annual: null },
+    price: null,
     popular: false,
     btnLabel: 'Start free →',
     btnVariant: 'outline',
@@ -42,7 +47,7 @@ export const TIERS = {
     iconBg: 'rgba(56,139,229,0.15)',
     accentColor: 'sky',
     dotColor: '#388be5',
-    price: { monthly: 299, annual: 2990 },
+    price: null,
     popular: true,
     btnLabel: 'Subscribe →',
     btnVariant: 'blue',
@@ -68,35 +73,35 @@ export const TIERS = {
   },
 
   insider: {
-    name: 'Insider',
-    tagline: 'Obsessed with aviation',
+    name: 'Lifetime',
+    tagline: 'One payment. Full access, forever.',
     icon: '◈',        // ◈
-    iconBg: 'rgba(155,127,244,0.15)',
-    accentColor: 'violet',
-    dotColor: '#9b7ff4',
-    price: { monthly: 499, annual: 4990 },
-    popular: false,
-    btnLabel: 'Subscribe →',
-    btnVariant: 'purple',
+    iconBg: 'rgba(56,139,229,0.15)',
+    accentColor: 'sky',
+    dotColor: '#388be5',
+    price: LIFETIME_PRICE_INR,
+    popular: true,
+    btnLabel: 'Get lifetime access →',
+    btnVariant: 'blue',
     features: {
       'Compare Aircraft': [
         { text: '3 aircraft, full specs', active: true },
-        { text: 'PDF export', active: true, isNew: true },
+        { text: 'PDF export', active: true },
       ],
       'Range Map': [
         { text: 'Any aircraft + any origin', active: true },
         { text: '50% + 100% range rings', active: true },
         { text: 'Destination search', active: true },
-        { text: 'Multi-city range planning', active: true, isNew: true },
+        { text: 'Multi-city range planning', active: true },
       ],
       'Finance Calculator': [
         { text: 'All inputs editable', active: true },
         { text: 'Full cost breakdown', active: true },
-        { text: 'PDF & CSV export', active: true, isNew: true },
+        { text: 'PDF & CSV export', active: true },
       ],
       'Fleet Directory': [
         { text: 'All 137 operators', active: true },
-        { text: 'Full fleet CSV export', active: true, isNew: true },
+        { text: 'Full fleet CSV export', active: true },
       ],
     },
   },
@@ -104,31 +109,34 @@ export const TIERS = {
 
 // ─── Comparison table rows ──────────────────────────────────────────────────
 
+// Columns: [Free, Lifetime]
+export const COMPARISON_TIERS = ['curious', LIFETIME_TIER];
+
 export const COMPARISON_ROWS = [
   { section: 'Aircraft Comparison' },
-  { label: 'Aircraft slots', values: ['1', '3', '3'] },
-  { label: 'Full spec sheet', values: [true, true, true] },
-  { label: 'PDF export', values: [false, false, 'purple'] },
+  { label: 'Aircraft slots', values: ['1', '3'] },
+  { label: 'Full spec sheet', values: [true, true] },
+  { label: 'PDF export', values: [false, true] },
   { section: 'Range Map' },
-  { label: 'Select aircraft model', values: [false, true, true] },
-  { label: '50% range ring', values: [false, true, true] },
-  { label: 'Multi-city planning', values: [false, false, 'purple'] },
+  { label: 'Select aircraft model', values: [false, true] },
+  { label: '50% range ring', values: [false, true] },
+  { label: 'Multi-city planning', values: [false, true] },
   { section: 'Finance Calculator' },
-  { label: 'Edit inputs', values: [false, true, true] },
-  { label: 'Amortisation schedule', values: [false, true, true] },
-  { label: 'PDF export', values: [false, false, 'purple'] },
-  { label: 'CSV export', values: [false, false, 'purple'] },
+  { label: 'Edit inputs', values: [false, true] },
+  { label: 'Amortisation schedule', values: [false, true] },
+  { label: 'PDF export', values: [false, true] },
+  { label: 'CSV export', values: [false, true] },
   { section: 'Fleet Directory' },
-  { label: 'Operators visible', values: ['All 137', 'All 137', 'All 137'] },
-  { label: 'CSV export', values: [false, false, 'purple'] },
+  { label: 'Operators visible', values: ['All 137', 'All 137'] },
+  { label: 'CSV export', values: [false, true] },
 ];
 
 // ─── FAQs ───────────────────────────────────────────────────────────────────
 
 export const FAQS = [
   {
-    q: 'Can I cancel anytime?',
-    a: "Yes. You can cancel your subscription at any time from your account settings. You'll retain access until the end of your current billing period.",
+    q: 'Is this really a one-time payment?',
+    a: `Yes. You pay ₹${LIFETIME_PRICE_INR} once and get lifetime access to every feature. No renewals, no recurring charges, nothing to cancel.`,
   },
   {
     q: 'Is GST included in the price?',
@@ -139,11 +147,11 @@ export const FAQS = [
     a: "We accept all major UPI apps, credit/debit cards, net banking, and wallets via Razorpay — India's most trusted payment gateway.",
   },
   {
-    q: 'Can I upgrade or downgrade my plan?',
-    a: 'Absolutely. You can switch plans at any time. Upgrades take effect immediately; downgrades apply from your next billing cycle.',
+    q: 'Will I get new features added later?',
+    a: 'Yes. Lifetime members get every feature we add to the platform, at no extra cost.',
   },
   {
-    q: 'Do I need to own or buy a jet to subscribe?',
+    q: 'Do I need to own or buy a jet to sign up?',
     a: 'Not at all. Most of our members are aviation enthusiasts, content followers, and dreamers. This platform is for anyone passionate about private aviation in India.',
   },
 ];
@@ -164,10 +172,10 @@ export const TIER_COLORS = {
     dot: '#388be5',
   },
   insider: {
-    text: 'text-violet-400',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-400/30',
-    dot: '#9b7ff4',
+    text: 'text-sky-400',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-400/30',
+    dot: '#388be5',
   },
 };
 

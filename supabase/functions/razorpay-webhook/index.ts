@@ -1,7 +1,8 @@
-// Supabase Edge Function: receive Razorpay webhook events, verify signature, upsert subscription.
+// Supabase Edge Function: receive Razorpay webhook events, verify signature, grant access.
 // Requires: RAZORPAY_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
 // Point Razorpay Dashboard webhook at: https://<project>.supabase.co/functions/v1/razorpay-webhook
-// Subscribe to events: subscription.activated, subscription.charged, subscription.cancelled, subscription.completed, subscription.halted.
+// Events: order.paid (lifetime purchases). Legacy subscription.* events are still
+// handled so existing recurring subscribers keep working until they lapse.
 import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
@@ -20,11 +21,21 @@ serve(async (req) => {
 
   const event = JSON.parse(body) as RazorpayEvent;
   try {
+    if (event.event === 'order.paid') return await handleOrderPaid(event);
+
     const sub = event.payload?.subscription?.entity;
     if (!sub) return new Response(JSON.stringify({ ignored: true }), { status: 200 });
 
     const userId = sub.notes?.user_id;
     if (!userId) return new Response(JSON.stringify({ missing_user: true }), { status: 200 });
+
+    // Never let a legacy subscription event downgrade a lifetime member.
+    const { data: existing } = await admin
+      .from('subscriptions')
+      .select('plan')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (existing?.plan === 'lifetime') return ok({ skipped: 'lifetime' });
 
     const status = mapStatus(sub.status);
     await admin.from('subscriptions').upsert({
@@ -47,6 +58,34 @@ serve(async (req) => {
     return new Response(`Handler error: ${(err as Error).message}`, { status: 500 });
   }
 });
+
+async function handleOrderPaid(event: RazorpayEvent) {
+  const order = event.payload?.order?.entity;
+  const userId = order?.notes?.user_id;
+  if (!order || !userId || order.notes?.plan !== 'lifetime') return ok({ ignored: true });
+
+  const { error } = await admin.from('subscriptions').upsert({
+    user_id: userId,
+    status: 'active',
+    plan: 'lifetime',
+    tier: order.notes?.tier ?? 'insider',
+    provider: 'razorpay',
+    provider_customer_id: event.payload?.payment?.entity?.id ?? null,
+    provider_subscription_id: order.id,
+    current_period_end: null,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+
+  return ok({ received: true });
+}
+
+function ok(body: unknown) {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
 
 function mapStatus(razorpayStatus: string): string {
   switch (razorpayStatus) {
@@ -94,6 +133,15 @@ function timingSafeEqual(a: string, b: string): boolean {
 interface RazorpayEvent {
   event: string;
   payload?: {
+    order?: {
+      entity: {
+        id: string;
+        amount: number;
+        status: string;
+        notes?: { user_id?: string; tier?: string; plan?: string };
+      };
+    };
+    payment?: { entity: { id: string } };
     subscription?: {
       entity: {
         id: string;

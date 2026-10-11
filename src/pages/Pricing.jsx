@@ -1,176 +1,59 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, Loader2, Lock, Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import LifetimePassCard from '@/components/pricing/LifetimePassCard';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useSubscription } from '@/lib/auth/useSubscription';
 import { supabase } from '@/lib/supabase';
-import { TIERS, TIER_ORDER, COMPARISON_ROWS, FAQS } from '@/config/tiers';
+import {
+  TIERS,
+  LIFETIME_TIER,
+  LIFETIME_PRICE_INR,
+  COMPARISON_TIERS,
+  COMPARISON_ROWS,
+  FAQS,
+} from '@/config/tiers';
 
-
-
-// ─── Button style map ──────────────────────────────────────────────────────
-const BTN_CLASSES = {
-  outline: 'bg-transparent border border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-300',
-  blue:    'bg-sky-500 text-white hover:bg-sky-600',
-  purple:  'bg-violet-500/15 border border-violet-400/30 text-violet-400 hover:bg-violet-500/25',
-  amber:   'bg-amber-500/12 border border-amber-400/25 text-amber-400 hover:bg-amber-500/20',
-};
+// Razorpay's webhook activates access asynchronously; poll briefly after payment.
+const ACTIVATION_POLL_ATTEMPTS = 8;
+const ACTIVATION_POLL_INTERVAL_MS = 1500;
+const LIFETIME_COLUMN = COMPARISON_TIERS.indexOf(LIFETIME_TIER);
 
 // ─── Comparison cell renderer ──────────────────────────────────────────────
 function CellValue({ val }) {
   if (val === true)     return <span className="text-sky-400">&#10003;</span>;
-  if (val === 'purple') return <span className="text-violet-400">&#10003;</span>;
-  if (val === 'amber')  return <span className="text-amber-400">&#10003;</span>;
   if (val === false)    return <span className="text-slate-600/40">&#10005;</span>;
   return <span className="text-slate-400">{val}</span>;
-}
-
-// ─── Stagger container variant ─────────────────────────────────────────────
-const stagger = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-const cardVariant = {
-  hidden: { opacity: 0, y: 24 },
-  show:   { opacity: 1, y: 0, transition: { duration: 0.35 } },
-};
-
-// ─── Pricing Card (inline component) ───────────────────────────────────────
-function PricingCard({ tierId, tier, billing, currentTier, onSubscribe, loading, user }) {
-  const isFree    = tier.price.monthly === null;
-  const isCurrent = currentTier === tierId;
-
-  // Price display
-  let priceLabel, priceNote;
-  if (isFree) {
-    priceLabel = 'Free';
-    priceNote  = 'Forever free';
-  } else {
-    const amt = billing === 'annual' ? tier.price.annual : tier.price.monthly;
-    priceLabel = `₹${amt.toLocaleString('en-IN')}`;
-    priceNote  = billing === 'annual' ? 'per year · 2 months free' : 'per month';
-  }
-
-  return (
-    <motion.div
-      variants={cardVariant}
-      className={`relative flex flex-col rounded-2xl p-7 backdrop-blur-xl ${
-        tier.popular
-          ? 'bg-[#0a1628] border border-sky-500/50 shadow-[0_0_40px_rgba(56,139,229,0.08)]'
-          : 'bg-[#0d1526] border border-white/[0.07]'
-      }`}
-    >
-      {/* Popular badge */}
-      {tier.popular && (
-        <span className="absolute top-4 right-4 text-[10px] font-semibold uppercase tracking-wider text-sky-400 bg-sky-500/15 border border-sky-500/30 rounded-full px-2.5 py-0.5">
-          Most popular
-        </span>
-      )}
-
-      {/* Icon */}
-      <div
-        className="w-9 h-9 rounded-[10px] flex items-center justify-center text-base mb-4"
-        style={{ background: tier.iconBg }}
-      >
-        {tier.icon}
-      </div>
-
-      {/* Name + tagline */}
-      <div className="text-base font-medium text-slate-50 mb-0.5">{tier.name}</div>
-      <div className="text-xs text-slate-600 font-light mb-5">{tier.tagline}</div>
-
-      {/* Price block */}
-      <div className="mb-6 pb-6 border-b border-white/[0.07]">
-        <div className="text-[32px] font-light text-slate-50 tracking-tight leading-none">
-          {!isFree && (
-            <sup className="text-base font-normal align-super mr-0.5">₹</sup>
-          )}
-          {isFree ? 'Free' : priceLabel.replace(/^[₹$]/, '')}
-        </div>
-        <div className={`text-xs mt-1 ${billing === 'annual' && !isFree ? 'text-emerald-400' : 'text-slate-600'}`}>
-          {priceNote}
-        </div>
-      </div>
-
-      {/* Feature list */}
-      {Object.entries(tier.features).map(([label, items]) => (
-        <div key={label}>
-          <div className="text-[10px] font-semibold tracking-widest uppercase text-slate-600 mt-4 mb-2">
-            {label}
-          </div>
-          {items.map((item) => (
-            <div
-              key={item.text}
-              className={`flex items-start gap-2 text-[12.5px] leading-snug mb-1.5 ${
-                item.active ? 'text-slate-400' : 'text-slate-600 line-through opacity-40'
-              }`}
-            >
-              {item.active ? (
-                <span
-                  className="w-[5px] h-[5px] rounded-full shrink-0 mt-[5px]"
-                  style={{ background: tier.dotColor }}
-                />
-              ) : (
-                <Lock className="w-3 h-3 text-slate-600 shrink-0 mt-[3px]" />
-              )}
-              <span className="flex-1">{item.text}</span>
-              {item.isNew && (
-                <span className="text-[10px] text-violet-400 font-semibold shrink-0">◈</span>
-              )}
-            </div>
-          ))}
-        </div>
-      ))}
-
-      {/* CTA button */}
-      <div className="mt-auto pt-6">
-        {isCurrent ? (
-          <div className="w-full text-center py-2.5 rounded-[10px] text-sm font-medium text-slate-500 bg-white/5 border border-white/[0.07] cursor-default">
-            Current plan
-          </div>
-        ) : isFree ? (
-          <Link
-            to="/Signup"
-            className={`block w-full text-center py-2.5 rounded-[10px] text-[13px] font-medium transition-colors ${BTN_CLASSES.outline}`}
-          >
-            {tier.btnLabel}
-          </Link>
-        ) : (
-          <button
-            onClick={() => onSubscribe(tierId)}
-            disabled={loading}
-            className={`w-full py-2.5 rounded-[10px] text-[13px] font-medium cursor-pointer transition-colors disabled:opacity-50 ${BTN_CLASSES[tier.btnVariant]}`}
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : tier.btnLabel}
-          </button>
-        )}
-      </div>
-    </motion.div>
-  );
 }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────
 export default function Pricing() {
   const { user }  = useAuth();
-  const { isActive, tier: currentTier } = useSubscription();
+  const { isActive, tier: currentTier, refetch } = useSubscription();
   const navigate   = useNavigate();
   const [params]   = useSearchParams();
   const next       = params.get('next') || '/';
 
-  const [billing, setBilling]   = useState('monthly');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
 
-  // Redirect only if on highest tier — lower tiers can still upgrade
+  // Lifetime members have nothing to buy — send them on their way
   useEffect(() => {
-    if (isActive && currentTier === 'insider') {
+    if (isActive && currentTier === LIFETIME_TIER) {
       navigate(decodeURIComponent(next), { replace: true });
     }
   }, [isActive, currentTier, navigate, next]);
 
-  // ── handleSubscribe (now accepts tier) ─────────────────────────────────
-  const handleSubscribe = async (selectedTier) => {
+  const waitForActivation = async () => {
+    for (let i = 0; i < ACTIVATION_POLL_ATTEMPTS; i += 1) {
+      const { data } = await refetch();
+      if (data?.status === 'active' && data?.tier === LIFETIME_TIER) return;
+      await new Promise((r) => setTimeout(r, ACTIVATION_POLL_INTERVAL_MS));
+    }
+  };
+
+  const handlePurchase = async () => {
     if (!user) {
       navigate(`/Signup?next=${encodeURIComponent(`/Pricing?next=${encodeURIComponent(next)}`)}`);
       return;
@@ -185,7 +68,7 @@ export default function Pricing() {
       }
 
       const { data, error: fnError } = await supabase.functions.invoke('create-razorpay-order', {
-        body: { billing, tier: selectedTier, next },
+        body: {},
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
@@ -193,10 +76,17 @@ export default function Pricing() {
       if (!window.Razorpay) throw new Error('Razorpay SDK not loaded — please refresh');
       const rzp = new window.Razorpay({
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        subscription_id: data.subscription_id,
+        order_id: data.order_id,
+        amount: data.amount,
+        currency: data.currency,
         name: 'PDI Aviation',
-        description: `${TIERS[selectedTier].name} — ${billing}`,
-        handler: () => navigate(decodeURIComponent(next), { replace: true }),
+        description: 'Lifetime access',
+        handler: async () => {
+          setLoading(true);
+          await waitForActivation();
+          setLoading(false);
+          navigate(decodeURIComponent(next), { replace: true });
+        },
         prefill: { email: user.email, name: user.user_metadata?.full_name || '' },
         theme: { color: '#0ea5e9' },
       });
@@ -229,29 +119,8 @@ export default function Pricing() {
             <em className="font-serif italic text-sky-400">private aviation</em>
           </h1>
           <p className="text-slate-500 text-base max-w-lg mx-auto font-light mb-8">
-            Full access to India's most comprehensive private aviation platform — for enthusiasts, dreamers, and future owners.
+            One payment of ₹{LIFETIME_PRICE_INR}. Lifetime access to India's most comprehensive private aviation platform — no subscriptions, no renewals.
           </p>
-
-          {/* Billing toggle */}
-          <div className="inline-flex items-center gap-3.5 bg-[#0d1526] border border-white/[0.07] rounded-full py-1.5 pl-5 pr-1.5 text-[13px] text-slate-500 mb-4">
-            <span className={billing === 'monthly' ? 'text-slate-200' : ''}>Monthly</span>
-            <button
-              onClick={() => setBilling((b) => (b === 'monthly' ? 'annual' : 'monthly'))}
-              role="switch"
-              aria-checked={billing === 'annual'}
-              className="relative w-11 h-6 rounded-full bg-sky-500/20 border border-sky-500/30 cursor-pointer shrink-0"
-            >
-              <div
-                className="absolute top-[3px] w-4 h-4 rounded-full bg-sky-500 transition-[left] duration-200"
-                style={{ left: billing === 'annual' ? '21px' : '3px' }}
-              />
-            </button>
-            <span className={billing === 'annual' ? 'text-slate-200' : ''}>Annual</span>
-            <span className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-full px-2.5 py-0.5 text-[11px] font-medium">
-              Save 2 months
-            </span>
-          </div>
-
         </div>
 
         {/* Error banner */}
@@ -262,26 +131,15 @@ export default function Pricing() {
           </div>
         )}
 
-        {/* ── Pricing cards ── */}
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-20"
-        >
-          {TIER_ORDER.map((id) => (
-            <PricingCard
-              key={id}
-              tierId={id}
-              tier={TIERS[id]}
-              billing={billing}
-              currentTier={currentTier}
-              onSubscribe={handleSubscribe}
-              loading={loading}
-              user={user}
-            />
-          ))}
-        </motion.div>
+        {/* ── Lifetime pass ── */}
+        <div className="mb-24">
+          <LifetimePassCard
+            tier={TIERS[LIFETIME_TIER]}
+            isOwned={isActive && currentTier === LIFETIME_TIER}
+            onPurchase={handlePurchase}
+            loading={loading}
+          />
+        </div>
 
         {/* ── Comparison table ── */}
         <div className="mb-20">
@@ -289,20 +147,20 @@ export default function Pricing() {
             Full feature comparison
           </div>
           <div className="overflow-x-auto -mx-4 px-4">
-            <table className="w-full border-collapse text-[13px] min-w-[640px]">
+            <table className="w-full max-w-3xl mx-auto border-collapse text-[13px] min-w-[480px]">
               <thead>
                 <tr>
                   <th className="sticky left-0 bg-slate-950 z-10 px-4 py-2.5 text-left text-xs font-medium text-slate-600 border-b border-white/[0.07]">
                     Feature
                   </th>
-                  {TIER_ORDER.map((id, i) => (
+                  {COMPARISON_TIERS.map((id, i) => (
                     <th
                       key={id}
                       className={`px-4 py-2.5 text-center text-xs font-medium text-slate-400 border-b border-white/[0.07] ${
-                        i === 1 ? 'bg-sky-500/[0.04]' : ''
+                        i === LIFETIME_COLUMN ? 'bg-sky-500/[0.04]' : ''
                       }`}
                     >
-                      {TIERS[id].name}
+                      {id === LIFETIME_TIER ? TIERS[id].name : 'Free'}
                     </th>
                   ))}
                 </tr>
@@ -312,7 +170,7 @@ export default function Pricing() {
                   row.section ? (
                     <tr key={i}>
                       <td
-                        colSpan={4}
+                        colSpan={COMPARISON_TIERS.length + 1}
                         className="px-4 pt-4 pb-1.5 text-[10px] font-semibold tracking-widest uppercase text-slate-600 bg-white/[0.01]"
                       >
                         {row.section}
@@ -327,7 +185,7 @@ export default function Pricing() {
                         <td
                           key={j}
                           className={`px-4 py-3 border-b border-white/[0.03] text-center ${
-                            j === 1 ? 'bg-sky-500/[0.04]' : ''
+                            j === LIFETIME_COLUMN ? 'bg-sky-500/[0.04]' : ''
                           }`}
                         >
                           <CellValue val={val} />
@@ -366,32 +224,24 @@ export default function Pricing() {
             <em className="font-serif italic text-sky-400">aviation journey</em>{' '}
             today
           </h2>
-          <Link
-            to="/Signup"
-            className="inline-block px-8 py-3 rounded-[10px] bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors"
+          <button
+            onClick={handlePurchase}
+            disabled={loading || (isActive && currentTier === LIFETIME_TIER)}
+            className="inline-block px-8 py-3 rounded-[10px] bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors disabled:opacity-50"
           >
-            Get started free &rarr;
-          </Link>
+            Get lifetime access · ₹{LIFETIME_PRICE_INR} &rarr;
+          </button>
           <p className="text-slate-600 text-[13px] mt-3">
-            No credit card required &middot; Cancel anytime &middot; Payments secured by Razorpay
+            One-time payment &middot; No renewals &middot; Payments secured by Razorpay
           </p>
           <Link
             to="/AircraftComparison"
             className="inline-block mt-4 text-sm text-slate-500 hover:text-sky-400 transition-colors"
           >
-            Continue with current plan &rarr;
+            Continue with the free version &rarr;
           </Link>
         </div>
 
-        {/* Manage plan link */}
-        {user && (
-          <p className="text-center text-sm text-slate-500 pb-8">
-            Already subscribed?{' '}
-            <Link to="/Account" className="text-sky-300 hover:text-sky-200 font-medium">
-              Manage your plan
-            </Link>
-          </p>
-        )}
       </motion.div>
     </div>
   );
