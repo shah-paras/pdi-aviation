@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import LifetimePassCard from '@/components/pricing/LifetimePassCard';
+import MembershipPassCard from '@/components/pricing/MembershipPassCard';
+import { usePricingOffer } from '@/hooks/usePricingOffer';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useSubscription } from '@/lib/auth/useSubscription';
 import { supabase } from '@/lib/supabase';
 import {
   TIERS,
   LIFETIME_TIER,
-  LIFETIME_PRICE_INR,
   COMPARISON_TIERS,
   COMPARISON_ROWS,
   FAQS,
@@ -30,7 +30,9 @@ function CellValue({ val }) {
 // ─── Main Page ─────────────────────────────────────────────────────────────
 export default function Pricing() {
   const { user }  = useAuth();
-  const { isActive, tier: currentTier, refetch } = useSubscription();
+  const { isActive, tier: currentTier, subscription, refetch } = useSubscription();
+  const { offer, refetch: refetchOffer } = usePricingOffer();
+  const isMember   = isActive && currentTier === LIFETIME_TIER;
   const navigate   = useNavigate();
   const [params]   = useSearchParams();
   const next       = params.get('next') || '/';
@@ -38,12 +40,10 @@ export default function Pricing() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState(null);
 
-  // Lifetime members have nothing to buy — send them on their way
+  // Members have nothing to buy — send them on their way
   useEffect(() => {
-    if (isActive && currentTier === LIFETIME_TIER) {
-      navigate(decodeURIComponent(next), { replace: true });
-    }
-  }, [isActive, currentTier, navigate, next]);
+    if (isMember) navigate(decodeURIComponent(next), { replace: true });
+  }, [isMember, navigate, next]);
 
   const waitForActivation = async () => {
     for (let i = 0; i < ACTIVATION_POLL_ATTEMPTS; i += 1) {
@@ -74,16 +74,19 @@ export default function Pricing() {
       if (data?.error) throw new Error(data.error);
 
       if (!window.Razorpay) throw new Error('Razorpay SDK not loaded — please refresh');
+      // The server picks the offer: a one-time order (founding lifetime) or a yearly subscription.
+      const checkout = data.mode === 'subscription'
+        ? { subscription_id: data.subscription_id, description: 'Annual membership' }
+        : { order_id: data.order_id, amount: data.amount, currency: data.currency, description: 'Founding lifetime access' };
+
       const rzp = new window.Razorpay({
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        order_id: data.order_id,
-        amount: data.amount,
-        currency: data.currency,
+        ...checkout,
         name: 'PDI Aviation',
-        description: 'Lifetime access',
         handler: async () => {
           setLoading(true);
           await waitForActivation();
+          refetchOffer();
           setLoading(false);
           navigate(decodeURIComponent(next), { replace: true });
         },
@@ -119,7 +122,9 @@ export default function Pricing() {
             <em className="font-serif italic text-sky-400">private aviation</em>
           </h1>
           <p className="text-slate-500 text-base max-w-lg mx-auto font-light mb-8">
-            One payment of ₹{LIFETIME_PRICE_INR}. Lifetime access to India's most comprehensive private aviation platform — no subscriptions, no renewals.
+            {offer.kind === 'lifetime'
+              ? `Founding offer: the first ${offer.limit || 500} members pay ₹${offer.lifetimePriceInr} once and keep full access for life.`
+              : `Full access to India's most comprehensive private aviation platform for ₹${offer.annualPriceInr} a year.`}
           </p>
         </div>
 
@@ -131,11 +136,12 @@ export default function Pricing() {
           </div>
         )}
 
-        {/* ── Lifetime pass ── */}
+        {/* ── Membership pass ── */}
         <div className="mb-24">
-          <LifetimePassCard
+          <MembershipPassCard
             tier={TIERS[LIFETIME_TIER]}
-            isOwned={isActive && currentTier === LIFETIME_TIER}
+            offer={offer}
+            memberPlan={isMember ? subscription?.plan : null}
             onPurchase={handlePurchase}
             loading={loading}
           />
@@ -226,13 +232,17 @@ export default function Pricing() {
           </h2>
           <button
             onClick={handlePurchase}
-            disabled={loading || (isActive && currentTier === LIFETIME_TIER)}
+            disabled={loading || isMember}
             className="inline-block px-8 py-3 rounded-[10px] bg-sky-500 text-white text-sm font-medium hover:bg-sky-600 transition-colors disabled:opacity-50"
           >
-            Get lifetime access · ₹{LIFETIME_PRICE_INR} &rarr;
+            {offer.kind === 'lifetime'
+              ? `Claim founding lifetime · ₹${offer.lifetimePriceInr}`
+              : `Become a member · ₹${offer.annualPriceInr}/year`} &rarr;
           </button>
           <p className="text-slate-600 text-[13px] mt-3">
-            One-time payment &middot; No renewals &middot; Payments secured by Razorpay
+            {offer.kind === 'lifetime'
+              ? 'One-time payment · No renewals · Payments secured by Razorpay'
+              : 'Renews yearly · Cancel anytime · Payments secured by Razorpay'}
           </p>
           <Link
             to="/AircraftComparison"

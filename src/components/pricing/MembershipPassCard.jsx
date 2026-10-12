@@ -3,6 +3,7 @@ import {
   ArrowRight,
   BadgeCheck,
   Calculator,
+  CalendarClock,
   Check,
   Globe2,
   Infinity as InfinityIcon,
@@ -22,11 +23,38 @@ const GROUP_ICONS = {
   'Fleet Directory': Globe2,
 };
 
-const PERKS = [
-  { icon: InfinityIcon, text: 'No renewals, ever' },
-  { icon: Sparkles, text: 'Every future feature included' },
-  { icon: ShieldCheck, text: 'UPI, cards & net banking via Razorpay' },
-];
+// Copy for each offer the server can return (see get-pricing-offer).
+const OFFER_COPY = {
+  lifetime: {
+    tag: 'Founding member',
+    code: 'PDI · ∞',
+    headline: ['Pay once.', 'Fly forever.'],
+    priceNote: ['one-time', 'incl. GST'],
+    cta: 'Claim founding lifetime',
+    perks: [
+      { icon: InfinityIcon, text: 'Lifetime access — no renewals, ever' },
+      { icon: Sparkles, text: 'Every future feature included' },
+      { icon: ShieldCheck, text: 'UPI, cards & net banking via Razorpay' },
+    ],
+  },
+  annual: {
+    tag: 'Annual membership',
+    code: 'PDI · 1Y',
+    headline: ['Full access.', 'All year long.'],
+    priceNote: ['per year', 'incl. GST'],
+    cta: 'Become a member',
+    perks: [
+      { icon: CalendarClock, text: 'Renews yearly — cancel anytime' },
+      { icon: Sparkles, text: 'Every new feature included' },
+      { icon: ShieldCheck, text: 'UPI Autopay & cards via Razorpay' },
+    ],
+  },
+};
+
+const MEMBER_LABEL = {
+  lifetime: 'You have lifetime access',
+  annual: "You're a member",
+};
 
 const groupList = {
   hidden: {},
@@ -37,12 +65,52 @@ const groupItem = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
 };
 
+/** Live "X of 500 founding spots left" meter — real counts only. */
+function FoundingSpots({ claimed, limit, remaining }) {
+  const reduced = useReducedMotion();
+  const fill = limit > 0 ? Math.min(claimed / limit, 1) : 1;
+
+  return (
+    <div className="mt-6 rounded-xl border border-amber-300/20 bg-amber-300/[0.06] p-4">
+      <div className="flex items-baseline justify-between gap-3 text-[12px]">
+        <span className="font-medium text-amber-200">
+          Only the first {limit.toLocaleString('en-IN')} members
+        </span>
+        <span className="tabular-nums text-slate-400">
+          <span className="font-semibold text-slate-100">{remaining.toLocaleString('en-IN')}</span> spots left
+        </span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label="Founding spots claimed"
+        aria-valuemin={0}
+        aria-valuemax={limit}
+        aria-valuenow={claimed}
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"
+      >
+        <motion.div
+          className="h-full origin-left rounded-full bg-gradient-to-r from-amber-300 to-sky-400"
+          initial={reduced ? false : { scaleX: 0 }}
+          animate={{ scaleX: fill }}
+          transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
+        />
+      </div>
+      <p className="mt-2 text-[11px] text-slate-500">
+        After that, membership becomes a yearly plan.
+      </p>
+    </div>
+  );
+}
+
 /**
  * Single-plan "boarding pass" card: price stub on the left, everything it
- * unlocks on the right, separated by a perforated tear line.
+ * unlocks on the right, separated by a perforated tear line. Renders either
+ * the founding lifetime offer or the annual membership.
  */
-export default function LifetimePassCard({ tier, isOwned, onPurchase, loading }) {
+export default function MembershipPassCard({ tier, offer, memberPlan, onPurchase, loading }) {
   const reduced = useReducedMotion();
+  const copy = OFFER_COPY[offer.kind];
+  const price = offer.kind === 'lifetime' ? offer.lifetimePriceInr : offer.annualPriceInr;
   const reveal = reduced ? {} : { variants: groupList, initial: 'hidden', animate: 'show' };
   const revealItem = reduced ? {} : { variants: groupItem };
 
@@ -60,25 +128,25 @@ export default function LifetimePassCard({ tier, isOwned, onPurchase, loading })
           <div className="grid lg:grid-cols-[minmax(0,5fr)_auto_minmax(0,7fr)]">
             {/* ── Stub: price + CTA ── */}
             <section
-              aria-labelledby="lifetime-pass-heading"
+              aria-labelledby="membership-pass-heading"
               className="relative flex flex-col p-8 sm:p-10 bg-[radial-gradient(120%_80%_at_0%_0%,rgba(14,165,233,0.16),transparent_60%)]"
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-sky-300">
                   <Plane className="w-3 h-3 -rotate-45" aria-hidden />
-                  Lifetime pass
+                  {copy.tag}
                 </span>
-                <span className="font-mono text-[10px] tracking-[0.2em] text-slate-600">PDI · ∞</span>
+                <span className="font-mono text-[10px] tracking-[0.2em] text-slate-600">{copy.code}</span>
               </div>
 
               <h2
-                id="lifetime-pass-heading"
+                id="membership-pass-heading"
                 className="mt-8 font-serif text-3xl sm:text-4xl italic text-slate-50 leading-tight"
               >
-                Pay once.
+                {copy.headline[0]}
                 <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 to-blue-500">
-                  Fly forever.
+                  {copy.headline[1]}
                 </span>
               </h2>
 
@@ -86,18 +154,22 @@ export default function LifetimePassCard({ tier, isOwned, onPurchase, loading })
                 <div className="flex items-start text-slate-50 leading-none">
                   <span className="mt-2 mr-1 text-2xl font-light text-sky-300">₹</span>
                   <span className="text-7xl font-extralight tracking-tighter tabular-nums">
-                    {tier.price.toLocaleString('en-IN')}
+                    {price.toLocaleString('en-IN')}
                   </span>
                 </div>
                 <div className="pb-2 text-xs leading-snug text-slate-500">
-                  one-time
+                  {copy.priceNote[0]}
                   <br />
-                  incl. GST
+                  {copy.priceNote[1]}
                 </div>
               </div>
 
+              {offer.kind === 'lifetime' && offer.limit > 0 && (
+                <FoundingSpots claimed={offer.claimed} limit={offer.limit} remaining={offer.remaining} />
+              )}
+
               <ul className="mt-8 space-y-3">
-                {PERKS.map(({ icon: Icon, text }) => (
+                {copy.perks.map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-center gap-3 text-[13px] text-slate-300">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5">
                       <Icon className="w-3.5 h-3.5 text-sky-300" aria-hidden />
@@ -108,10 +180,10 @@ export default function LifetimePassCard({ tier, isOwned, onPurchase, loading })
               </ul>
 
               <div className="mt-10 lg:mt-auto lg:pt-10">
-                {isOwned ? (
+                {memberPlan ? (
                   <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 py-3.5 text-sm font-medium text-emerald-300">
                     <BadgeCheck className="w-4 h-4" aria-hidden />
-                    You have lifetime access
+                    {MEMBER_LABEL[memberPlan] ?? MEMBER_LABEL.annual}
                   </div>
                 ) : (
                   <button
@@ -129,7 +201,7 @@ export default function LifetimePassCard({ tier, isOwned, onPurchase, loading })
                       <Loader2 className="w-4 h-4 animate-spin" aria-label="Starting checkout" />
                     ) : (
                       <>
-                        Get lifetime access
+                        {copy.cta}
                         <ArrowRight
                           className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
                           aria-hidden

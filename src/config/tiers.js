@@ -8,6 +8,9 @@ export const PAID_TIERS = ['enthusiast', 'insider'];
 // top tier. Legacy 'enthusiast' stays defined so existing gating still works.
 export const LIFETIME_TIER = 'insider';
 export const LIFETIME_PRICE_INR = 999;
+// Founding offer: first N members get lifetime; afterwards ₹999/year.
+// Display defaults only — the server (FOUNDING_LIMIT secret) is authoritative.
+export const FOUNDING_LIMIT = 500;
 
 // ─── Per-tier metadata ──────────────────────────────────────────────────────
 
@@ -135,8 +138,12 @@ export const COMPARISON_ROWS = [
 
 export const FAQS = [
   {
-    q: 'Is this really a one-time payment?',
-    a: `Yes. You pay ₹${LIFETIME_PRICE_INR} once and get lifetime access to every feature. No renewals, no recurring charges, nothing to cancel.`,
+    q: 'What is the founding member offer?',
+    a: `The first ${FOUNDING_LIMIT} members pay ₹${LIFETIME_PRICE_INR} once and get lifetime access — no renewals, ever. Once those spots are gone, membership becomes ₹${LIFETIME_PRICE_INR} per year.`,
+  },
+  {
+    q: 'Can I cancel the yearly plan?',
+    a: "Yes. The yearly plan renews automatically and you can cancel anytime — you keep access until the end of the year you've paid for. Founding lifetime members never pay again.",
   },
   {
     q: 'Is GST included in the price?',
@@ -145,10 +152,6 @@ export const FAQS = [
   {
     q: 'Which payment methods are accepted?',
     a: "We accept all major UPI apps, credit/debit cards, net banking, and wallets via Razorpay — India's most trusted payment gateway.",
-  },
-  {
-    q: 'Will I get new features added later?',
-    a: 'Yes. Lifetime members get every feature we add to the platform, at no extra cost.',
   },
   {
     q: 'Do I need to own or buy a jet to sign up?',
